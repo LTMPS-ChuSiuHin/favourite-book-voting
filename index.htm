@@ -68,22 +68,32 @@
             100% { transform: translateY(-120vh) rotate(20deg) scale(1.2); opacity: 0; }
         }
 
-        /* 閃耀文字特效 */
+        /* 標題與漸層文字 (修復 Emoji 顯示問題) */
         h1, h2 {
             font-weight: 900;
             letter-spacing: 2px;
+            filter: drop-shadow(2px 2px 0px #fff) drop-shadow(0px 4px 10px rgba(255, 94, 126, 0.4));
+            margin-bottom: 10px;
+        }
+        h1 { font-size: 2.8em; }
+        
+        /* 專門給文字的漸層，避開 emoji */
+        .gradient-text {
             background: linear-gradient(90deg, #ff5e7e, #ff9a9e, #ff5e7e);
             background-size: 200% auto;
             color: transparent;
             -webkit-background-clip: text;
             background-clip: text;
             animation: shineText 3s linear infinite;
-            filter: drop-shadow(2px 2px 0px #fff) drop-shadow(0px 4px 10px rgba(255, 94, 126, 0.4));
+            display: inline-block;
         }
-        @keyframes shineText {
-            to { background-position: 200% center; }
+        @keyframes shineText { to { background-position: 200% center; } }
+        
+        .emoji {
+            display: inline-block;
+            -webkit-text-fill-color: initial;
+            color: initial;
         }
-        h1 { font-size: 2.8em; margin-bottom: 10px; }
         
         .view { 
             display: none; animation: fadeIn 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -99,7 +109,6 @@
             to { opacity: 1; transform: translateY(0) scale(1); } 
         }
 
-        /* 動感按鈕 */
         .btn {
             background: linear-gradient(45deg, var(--primary), var(--secondary));
             color: white; border: none; padding: 15px 35px; font-size: 1.2em;
@@ -148,12 +157,13 @@
             .grade-card { font-size: 1.3em; } .grid-3 { gap: 10px; } .view { padding: 15px; }
         }
 
-        /* ⚠️ 全新：書本外層容器 (解決溢出裁切問題) */
+        /* 書本外層容器 */
         .book-wrapper {
             position: relative;
             display: flex; justify-content: center;
+            cursor: pointer;
         }
-        .book-wrapper:hover { z-index: 100; } /* 確保彈出視窗不會被其他書本遮擋 */
+        .book-wrapper:hover { z-index: 100; } 
 
         .book-card {
             width: 100%; aspect-ratio: 3/4; display: flex; flex-direction: column;
@@ -166,7 +176,6 @@
             transition: transform 0.5s ease;
         }
         
-        /* 基本漂浮標籤 */
         .recommender-tag-floating {
             position: absolute; top: 10px; left: -2px; z-index: 3;
             background: linear-gradient(90deg, var(--primary), var(--secondary)); color: white;
@@ -176,12 +185,13 @@
 
         .book-card.selected { border-color: #ff758c; transform: scale(0.95); box-shadow: 0 0 20px rgba(255,117,140,0.6); }
         .book-card.selected::after {
-            content: '✨已選✨'; position: absolute; top: 10px; right: 10px; font-size: 0.9em; z-index: 5;
+            content: '✨已投票✨'; /* 改為已投票 */
+            position: absolute; top: 10px; right: 10px; font-size: 0.9em; z-index: 5;
             background: #ff758c; color: white; border-radius: 15px; padding: 5px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* ⚠️ 全新：魔法放大懸浮框 (Hover Popup) */
+        /* 魔法放大懸浮框 */
         .book-detail-popup {
             position: absolute;
             top: 50%; left: 50%;
@@ -196,23 +206,36 @@
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            pointer-events: none; /* 避免干擾滑鼠點擊 */
+            pointer-events: none;
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* 滑鼠移入外層容器時觸發特效 */
+        /* 懸浮時顯示放大框 */
         .book-wrapper:hover .book-detail-popup {
             opacity: 1; visibility: visible;
             transform: translate(-50%, -50%) scale(1);
         }
 
-        /* 放大框內的排版 */
         .popup-img { width: 120px; height: 160px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); border: 2px solid #fff; }
         .popup-title { margin: 0 0 8px 0; font-size: 1.4em; color: var(--secondary); font-weight: 900; line-height: 1.2; text-shadow: none; background: none; }
         .popup-recommender { background: linear-gradient(90deg, #a18cd1, #fbc2eb); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.9em; font-weight: bold; margin-bottom: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.1); }
         .popup-desc { font-size: 0.95em; color: #666; line-height: 1.5; font-weight: normal; max-height: 120px; overflow-y: auto; text-align: justify; padding: 0 5px; }
-        .popup-desc::-webkit-scrollbar { width: 4px; }
-        .popup-desc::-webkit-scrollbar-thumb { background: #ff9a9e; border-radius: 4px; }
+        
+        /* 懸浮框底部的「點擊投票」按鈕特效 */
+        .popup-vote-btn {
+            margin-top: 12px;
+            background: linear-gradient(45deg, #ff7eb3, #ff758c);
+            color: white; font-weight: bold; font-size: 1.1em;
+            padding: 8px 25px; border-radius: 25px;
+            box-shadow: 0 4px 10px rgba(255,117,140,0.4);
+            animation: pulseBtn 1.5s infinite;
+        }
+
+        @keyframes pulseBtn {
+            0% { transform: scale(1); box-shadow: 0 4px 10px rgba(255,117,140,0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 6px 15px rgba(255,117,140,0.6); }
+            100% { transform: scale(1); box-shadow: 0 4px 10px rgba(255,117,140,0.4); }
+        }
 
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
@@ -256,14 +279,15 @@
 
     <!-- 1. 登入畫面 -->
     <div id="login-view" class="view active">
-        <h1>📚 我最喜愛隨身書投票 🌟</h1>
+        <!-- 將 Emoji 包在 .emoji 中，避免受漸層色遮蔽 -->
+        <h1><span class="emoji">📖</span> <span class="gradient-text">我最喜愛隨身書投票</span> <span class="emoji">🌟</span></h1>
         <p style="font-size: 1.2em; font-weight: bold; color: #666;">進入夢幻繪本世界，請使用學校 Google 帳戶登入</p>
         <div id="google-btn-container"></div>
     </div>
 
     <!-- 2. 主選單畫面 -->
     <div id="main-menu-view" class="view">
-        <h1>我最喜愛隨身書投票 ✨</h1>
+        <h1><span class="emoji">📖</span> <span class="gradient-text">我最喜愛隨身書投票</span> <span class="emoji">✨</span></h1>
         <div id="user-info"></div><br>
         <button class="btn btn-secondary" onclick="showLeaderboardMenu()">🏆 查看龍虎榜</button>
         <button class="btn" style="background: rgba(200,200,200,0.8); box-shadow: none; color: #555;" onclick="logout()">登出</button>
@@ -273,7 +297,7 @@
 
     <!-- 3. 投票畫面 -->
     <div id="voting-view" class="view">
-        <h2 id="voting-title" style="font-size: 2.5em;">年級投票</h2>
+        <h2 id="voting-title" style="font-size: 2.5em;"><span class="gradient-text">年級投票</span></h2>
         <p style="font-weight: bold;">點擊選擇多本喜愛的隨身書，完成後點擊最下方的「提交投票」</p>
         <button class="btn btn-secondary" onclick="showMainMenu()">⬅️ 返回主選單</button>
         
@@ -284,7 +308,7 @@
 
     <!-- 4. 龍虎榜 獨立選單 -->
     <div id="leaderboard-menu-view" class="view">
-        <h1>🏆 我最喜愛隨身書龍虎榜 🏆</h1>
+        <h1><span class="emoji">🏆</span> <span class="gradient-text">我最喜愛隨身書龍虎榜</span> <span class="emoji">🏆</span></h1>
         <button class="btn btn-secondary" onclick="showMainMenu()">⬅️ 返回主選單</button>
         
         <div style="max-width: 900px; margin: 30px auto 10px; padding: 0 10px;">
@@ -298,7 +322,7 @@
 
     <!-- 5. 龍虎榜 詳細內頁 -->
     <div id="leaderboard-detail-view" class="view">
-        <h1 id="leaderboard-detail-title" style="font-size: 2.5em;">🏆 龍虎榜內頁 🏆</h1>
+        <h1 id="leaderboard-detail-title" style="font-size: 2.5em;"><span class="emoji">🏆</span> <span class="gradient-text">龍虎榜內頁</span> <span class="emoji">🏆</span></h1>
         <button class="btn btn-secondary" onclick="showLeaderboardMenu()">⬅️ 返回龍虎榜選單</button>
         <div id="leaderboard-list" style="margin-top: 20px;"></div>
     </div>
@@ -464,7 +488,7 @@
         window.openGradeVoting = (grade) => {
             currentGrade = grade;
             selectedBooks = [];
-            document.getElementById('voting-title').innerText = `${grade} - 最喜愛隨身書`;
+            document.getElementById('voting-title').innerHTML = `<span class="gradient-text">${grade} 投票</span>`;
             
             const bookGrid = document.getElementById('book-grid');
             bookGrid.innerHTML = '';
@@ -477,7 +501,7 @@
                 const displayDesc = book.desc !== "" ? book.desc : "精彩簡介稍後補上...";
                 const displayRecommender = book.recommender !== "" ? book.recommender : "稍後公佈";
 
-                // 使用 Wrapper 包裹卡片與放大懸浮框
+                // 使用 Wrapper 包裹卡片與放大懸浮框，點擊這個 Wrapper 等同於投票！
                 const wrapper = document.createElement('div');
                 wrapper.className = 'book-wrapper';
                 
@@ -494,6 +518,9 @@
                         <h4 class="popup-title">${displayTitle}</h4>
                         <div class="popup-recommender">👤 推介人：${displayRecommender}</div>
                         <div class="popup-desc">${displayDesc}</div>
+                        
+                        <!-- 點擊投票提示 -->
+                        <div class="popup-vote-btn">👆 點擊投票</div>
                     </div>
                 `;
 
@@ -562,7 +589,7 @@
 
         window.openLeaderboardDetail = async (category) => {
             switchView('leaderboard-detail-view');
-            document.getElementById('leaderboard-detail-title').innerText = category === 'top' ? '👑 各級首名' : `🏆 ${category}榜單`;
+            document.getElementById('leaderboard-detail-title').innerHTML = `<span class="emoji">🏆</span> <span class="gradient-text">${category === 'top' ? '各級首名' : category + '榜單'}</span> <span class="emoji">🏆</span>`;
             const listDiv = document.getElementById('leaderboard-list');
             listDiv.innerHTML = '<p style="font-size: 1.5em;">載入中，請稍候...⏳</p>';
 
