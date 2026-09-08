@@ -61,7 +61,7 @@
         
         .grade-card {
             aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-            font-size: 1.8em; font-weight: 900; color: white;
+            font-size: 1.8em; font-weight: 900; color: white; text-align: center; line-height: 1.3;
             background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
         }
         .grade-card:nth-child(2n) { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
@@ -94,7 +94,6 @@
             background: white; border-radius: 50%; padding: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        /* 排行榜項目樣式更新 */
         .leaderboard-item {
             background: white; margin: 10px auto; max-width: 650px; padding: 15px 25px;
             border-radius: 20px; display: flex; justify-content: space-between;
@@ -126,7 +125,7 @@
     <div id="main-menu-view" class="view">
         <h1>我最喜愛隨身書投票 ✨</h1>
         <div id="user-info"></div>
-        <button class="btn btn-secondary" onclick="showLeaderboard()">🏆 查看龍虎榜</button>
+        <button class="btn btn-secondary" onclick="showLeaderboardMenu()">🏆 查看龍虎榜</button>
         <button class="btn" style="background: #ccc; box-shadow: none;" onclick="logout()">登出</button>
         <div class="grid" id="grade-grid"></div>
     </div>
@@ -142,10 +141,17 @@
         <button class="btn" style="font-size: 1.5em; width: 80%; max-width: 400px; margin-top: 30px;" onclick="submitVote()">🚀 提交投票</button>
     </div>
 
-    <!-- 4. 龍虎榜畫面 -->
-    <div id="leaderboard-view" class="view">
-        <h1>🏆 隨身書龍虎榜 🏆</h1>
+    <!-- 4. 龍虎榜 7 個方格選單 -->
+    <div id="leaderboard-menu-view" class="view">
+        <h1>🏆 我最喜愛隨身書龍虎榜 🏆</h1>
         <button class="btn btn-secondary" onclick="showMainMenu()">⬅️ 返回主選單</button>
+        <div class="grid" id="leaderboard-grid"></div>
+    </div>
+
+    <!-- 5. 龍虎榜 詳細內頁 -->
+    <div id="leaderboard-detail-view" class="view">
+        <h1 id="leaderboard-detail-title">🏆 龍虎榜內頁 🏆</h1>
+        <button class="btn btn-secondary" onclick="showLeaderboardMenu()">⬅️ 返回龍虎榜選單</button>
         <div id="leaderboard-list" style="margin-top: 20px;"></div>
     </div>
 
@@ -351,9 +357,7 @@
             try {
                 const voteRef = doc(db, "votes", currentUser.uid);
                 
-                // ⚠️ 重大修改：移除了 { merge: true }
-                // 現在無論學生原本投哪個年級，只要提交新投票，整份個人資料都會被覆蓋。
-                // 確保每位學生永遠只計算「最近一次、單一個年級」的投票紀錄。
+                // 完全覆蓋學生的個人資料，保留最近一次的年級與選擇
                 await setDoc(voteRef, {
                     studentEmail: currentUser.email,
                     studentName: currentUser.name,
@@ -368,7 +372,30 @@
             }
         };
 
-        // 輔助函數：透過 ID 找回完整的書本名稱與圖片路徑
+        // 開啟龍虎榜的 7 個方格選單
+        window.showLeaderboardMenu = () => {
+            switchView('leaderboard-menu-view');
+            const grid = document.getElementById('leaderboard-grid');
+            grid.innerHTML = '';
+            
+            // 建立「各級首名」方格
+            const topDiv = document.createElement('div');
+            topDiv.className = 'card grade-card';
+            topDiv.style.background = 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)'; // 金色漸變
+            topDiv.innerHTML = '👑<br>各級首名';
+            topDiv.onclick = () => openLeaderboardDetail('top');
+            grid.appendChild(topDiv);
+
+            // 建立 1-6 年級方格
+            grades.forEach((grade) => {
+                const div = document.createElement('div');
+                div.className = 'card grade-card';
+                div.innerText = grade;
+                div.onclick = () => openLeaderboardDetail(grade);
+                grid.appendChild(div);
+            });
+        };
+
         const getBookInfo = (bookId, grade) => {
             const foundBook = booksConfig[grade].find(b => b.id === bookId);
             if (foundBook) {
@@ -379,8 +406,10 @@
             return { title: bookId, img: '' };
         };
 
-        window.showLeaderboard = async () => {
-            switchView('leaderboard-view');
+        // 讀取資料庫並渲染龍虎榜內頁
+        window.openLeaderboardDetail = async (category) => {
+            switchView('leaderboard-detail-view');
+            document.getElementById('leaderboard-detail-title').innerText = category === 'top' ? '👑 各級首名' : `🏆 ${category}榜單`;
             const listDiv = document.getElementById('leaderboard-list');
             listDiv.innerHTML = '<p>載入中，請稍候...⏳</p>';
 
@@ -388,14 +417,14 @@
                 const querySnapshot = await getDocs(collection(db, "votes"));
                 
                 // 初始化統計資料
-                let votersCount = {}; // 計算各年級投票人數
-                let votesCount = {};  // 計算各年級書本票數
+                let votersCount = {}; 
+                let votesCount = {};  
                 
                 grades.forEach(g => {
                     votersCount[g] = 0;
                     votesCount[g] = {};
                     booksConfig[g].forEach(b => {
-                        votesCount[g][b.id] = 0; // 每本書預設 0 票，確保都能顯示在榜上
+                        votesCount[g][b.id] = 0; 
                     });
                 });
 
@@ -403,7 +432,6 @@
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     grades.forEach(g => {
-                        // 如果這份紀錄裡有該年級的投票陣列，代表他最新一次投票是在這個年級
                         if (data[g] && Array.isArray(data[g])) {
                             votersCount[g]++;
                             data[g].forEach(bookId => {
@@ -417,43 +445,42 @@
 
                 let html = '';
 
-                // 1. 各級首名專區
-                html += `<h2 style="color: var(--primary); border-bottom: 2px dashed var(--primary); padding-bottom: 10px;">👑 各級首名 👑</h2>`;
-                grades.forEach(grade => {
-                    const sortedBooks = Object.entries(votesCount[grade]).sort((a, b) => b[1] - a[1]);
-                    // 只顯示有獲得票數的第一名
-                    if (sortedBooks.length > 0 && sortedBooks[0][1] > 0) { 
-                        const topBookId = sortedBooks[0][0];
-                        const topBookCount = sortedBooks[0][1];
-                        const bookInfo = getBookInfo(topBookId, grade);
-                        
-                        html += `
-                            <div class="leaderboard-item">
-                                <div style="display: flex; align-items: center;">
-                                    <span style="font-size: 1.5em; margin-right: 15px;">🏆</span>
-                                    <img src="${bookInfo.img}" class="leaderboard-img" onerror="this.style.display='none'">
-                                    <div style="display: flex; flex-direction: column;">
-                                        <span style="font-size: 0.8em; color: #888; font-weight: normal;">${grade}</span>
-                                        <span>${bookInfo.title}</span>
+                // 如果是查看「各級首名」
+                if (category === 'top') {
+                    grades.forEach(grade => {
+                        const sortedBooks = Object.entries(votesCount[grade]).sort((a, b) => b[1] - a[1]);
+                        if (sortedBooks.length > 0 && sortedBooks[0][1] > 0) { 
+                            const topBookId = sortedBooks[0][0];
+                            const topBookCount = sortedBooks[0][1];
+                            const bookInfo = getBookInfo(topBookId, grade);
+                            
+                            html += `
+                                <div class="leaderboard-item">
+                                    <div style="display: flex; align-items: center;">
+                                        <span style="font-size: 1.5em; margin-right: 15px;">🏆</span>
+                                        <img src="${bookInfo.img}" class="leaderboard-img" onerror="this.style.display='none'">
+                                        <div style="display: flex; flex-direction: column;">
+                                            <span style="font-size: 0.8em; color: #888; font-weight: normal;">${grade}</span>
+                                            <span>${bookInfo.title}</span>
+                                        </div>
                                     </div>
+                                    <span class="votes">${topBookCount} 票</span>
                                 </div>
-                                <span class="votes">${topBookCount} 票</span>
-                            </div>
-                        `;
-                    }
-                });
-
-                // 2. 六個年級的詳細榜單
-                grades.forEach(grade => {
-                    html += `<h2 style="margin-top: 50px; color: var(--secondary);">${grade}榜單</h2>`;
-                    html += `<p style="font-size: 1.1em; color: #555;">👤 本級投票總人數：<span style="font-weight: 900; color: var(--primary);">${votersCount[grade]}</span> 人</p>`;
+                            `;
+                        }
+                    });
+                    if (html === '') html = '<p>目前還沒有人投票喔！</p>';
+                } 
+                // 如果是查看「特定年級」
+                else {
+                    const grade = category;
+                    html += `<p style="font-size: 1.1em; color: #555; margin-bottom: 25px;">👤 本級投票總人數：<span style="font-weight: 900; color: var(--primary);">${votersCount[grade]}</span> 人</p>`;
                     
                     const sortedBooks = Object.entries(votesCount[grade]).sort((a, b) => b[1] - a[1]);
                     
                     sortedBooks.forEach(([bookId, count], index) => {
                         const bookInfo = getBookInfo(bookId, grade);
                         
-                        // 處理前三名圖示 (只有在有票數的情況下才給獎牌，不然統一給數字)
                         let rankIcon = `<span style="width: 35px; display: inline-block; text-align: center;">${index + 1}.</span>`;
                         if (index === 0 && count > 0) rankIcon = `<span style="font-size: 1.5em; width: 35px; display: inline-block; text-align: center;">🥇</span>`;
                         else if (index === 1 && count > 0) rankIcon = `<span style="font-size: 1.5em; width: 35px; display: inline-block; text-align: center;">🥈</span>`;
@@ -470,7 +497,7 @@
                             </div>
                         `;
                     });
-                });
+                }
 
                 listDiv.innerHTML = html;
 
