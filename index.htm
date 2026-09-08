@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google Client ID -->
+    <meta name="google-signin-client_id" content="573911894747-0c28hfr0bmkjnn8pkm2msg6sjal1thqe.apps.googleusercontent.com">
+    <title>我最喜愛隨身書投票</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ff7eb3;
+            --secondary: #ff758c;
+            --bg-color: #fff0f5;
+            --text-color: #555;
+        }
+        body {
+            font-family: 'Nunito', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#ffc3a0 1px, transparent 1px), radial-gradient(#ffc3a0 1px, transparent 1px);
+            background-position: 0 0, 25px 25px;
+            background-size: 50px 50px;
+            color: var(--text-color);
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: var(--secondary);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-weight: 900;
+        }
+        h1 { font-size: 2.5em; margin-bottom: 10px; }
+        
+        /* 視圖切換 */
+        .view { display: none; animation: fadeIn 0.5s; }
+        .view.active { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 按鈕設計 */
+        .btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255,117,140,0.4);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            margin: 10px;
+        }
+        .btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(255,117,140,0.6);
+        }
+        .btn-secondary { background: linear-gradient(45deg, #4facfe, #00f2fe); box-shadow: 0 5px 15px rgba(79,172,254,0.4); }
+        .btn-secondary:hover { box-shadow: 0 8px 20px rgba(79,172,254,0.6); }
+
+        /* 網格佈局 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 20px;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 10px;
+        }
+
+        /* 卡片設計 (年級與書本) */
+        .card {
+            background: white;
+            border-radius: 25px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        /* 年級卡片 */
+        .grade-card {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            font-weight: 900;
+            color: white;
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+        }
+        .grade-card:nth-child(2n) { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
+        .grade-card:nth-child(3n) { background: linear-gradient(135deg, #fccb90 0%, #d57eeb 100%); }
+        .grade-card:hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 15px 25px rgba(0,0,0,0.15); }
+
+        /* 書本卡片 */
+        .book-card {
+            aspect-ratio: 3/4;
+            background-color: #f0f0f0; /* 預設圖片背景色 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            color: #888;
+            border: 5px solid transparent;
+        }
+        .book-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none; /* 填入真實圖片後改為 block */
+        }
+        /* 書本簡介懸浮特效 */
+        .book-info {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 126, 179, 0.9);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            font-size: 1em;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-align: left;
+        }
+        .book-card:hover .book-info { opacity: 1; }
+        
+        /* 選取狀態 */
+        .book-card.selected {
+            border-color: #ff758c;
+            transform: scale(0.95);
+            box-shadow: inset 0 0 15px rgba(255,117,140,0.5);
+        }
+        .book-card.selected::after {
+            content: '✔️';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5em;
+            background: white;
+            border-radius: 50%;
+            padding: 2px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 龍虎榜樣式 */
+        .leaderboard-item {
+            background: white;
+            margin: 10px auto;
+            max-width: 600px;
+            padding: 15px 25px;
+            border-radius: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .leaderboard-item span.votes {
+            background: var(--primary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+        }
+        
+        #user-info { margin-bottom: 20px; font-weight: bold; color: #777; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. 登入畫面 -->
+    <div id="login-view" class="view active">
+        <h1>📚 我最喜愛隨身書投票 🌟</h1>
+        <p>請使用學校 Google 帳戶登入</p>
+        <button class="btn" onclick="login()">用 Google 帳戶登入</button>
+    </div>
+
+    <!-- 2. 主選單畫面 -->
+    <div id="main-menu-view" class="view">
+        <h1>我最喜愛隨身書投票 ✨</h1>
+        <div id="user-info"></div>
+        <button class="btn btn-secondary" onclick="showLeaderboard()">🏆 查看龍虎榜</button>
+        <button class="btn" style="background: #ccc; box-shadow: none;" onclick="logout()">登出</button>
+        
+        <div class="grid" id="grade-grid">
+            <!-- 年級方格由 JS 自動生成 -->
+        </div>
+    </div>
+
+    <!-- 3. 投票畫面 (年級內頁) -->
+    <div id="voting-view" class="view">
+        <h2 id="voting-title">年級投票</h2>
+        <p>可點擊選擇多本喜愛的隨身書，完成後點擊最下方的「提交投票」</p>
+        <button class="btn btn-secondary" onclick="showMainMenu()">⬅️ 返回主選單</button>
+        
+        <div class="grid" id="book-grid">
+            <!-- 書本由 JS 自動生成 -->
+        </div>
+
+        <button class="btn" style="font-size: 1.5em; width: 80%; max-width: 400px; margin-top: 30px;" onclick="submitVote()">🚀 提交投票</button>
+    </div>
+
+    <!-- 4. 龍虎榜畫面 -->
+    <div id="leaderboard-view" class="view">
+        <h1>🏆 隨身書龍虎榜 🏆</h1>
+        <button class="btn btn-secondary" onclick="showMainMenu()">⬅️ 返回主選單</button>
+        <div id="leaderboard-list" style="margin-top: 20px;">
+            <!-- 龍虎榜由 JS 自動生成 -->
+        </div>
+    </div>
+
+    <!-- Firebase SDK (Modular V10) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // Firebase 設置 (使用你提供的設定)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHL8yscpNGsXDUAFa7dBNywztX3-mDuuM",
+            authDomain: "lunch-announcement-9f0d5.firebaseapp.com",
+            projectId: "lunch-announcement-9f0d5",
+            storageBucket: "lunch-announcement-9f0d5.firebasestorage.app",
+            messagingSenderId: "370563000744",
+            appId: "1:370563000744:web:409da50d8edb040223d59d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        // 狀態變數
+        let currentUser = null;
+        let currentGrade = '';
+        let selectedBooks = [];
+        
+        const grades = ['一年級', '二年級', '三年級', '四年級', '五年級', '六年級'];
+
+        // 綁定全域函數 (讓 HTML 內的 onclick 可以呼叫)
+        window.login = () => {
+            signInWithPopup(auth, provider).catch(error => {
+                alert("登入失敗：" + error.message);
+            });
+        };
+
+        window.logout = () => { signOut(auth); };
+
+        // 監聽登入狀態
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // 如果需要限制學校網域，可在此檢查：
+                // if (!user.email.endsWith("@yourschool.edu.hk")) { alert("請使用學校帳戶！"); logout(); return; }
+                currentUser = user;
+                document.getElementById('user-info').innerText = `你好，${user.displayName} (${user.email})`;
+                initMainMenu();
+                switchView('main-menu-view');
+            } else {
+                currentUser = null;
+                switchView('login-view');
+            }
+        });
+
+        // 視圖切換
+        window.switchView = (viewId) => {
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+        };
+        window.showMainMenu = () => switchView('main-menu-view');
+
+        // 建立主選單 (年級方塊)
+        function initMainMenu() {
+            const gradeGrid = document.getElementById('grade-grid');
+            gradeGrid.innerHTML = '';
+            grades.forEach(grade => {
+                const div = document.createElement('div');
+                div.className = 'card grade-card';
+                div.innerText = grade;
+                div.onclick = () => openGradeVoting(grade);
+                gradeGrid.appendChild(div);
+            });
+        }
+
+        // 開啟該年級投票頁面
+        window.openGradeVoting = (grade) => {
+            currentGrade = grade;
+            selectedBooks = [];
+            document.getElementById('voting-title').innerText = `${grade} - 最喜愛隨身書`;
+            
+            const bookGrid = document.getElementById('book-grid');
+            bookGrid.innerHTML = '';
+
+            // 生成 10 本書本
+            for (let i = 1; i <= 10; i++) {
+                const bookId = `${grade}-book${i}`;
+                const div = document.createElement('div');
+                div.className = 'card book-card';
+                div.id = bookId;
+                
+                // 圖片與簡介結構 (預留位置給日後替換)
+                div.innerHTML = `
+                    <img src="" alt="書本 ${i}">
+                    <span>書本 ${i} <br>(圖片待補)</span>
+                    <div class="book-info">這是第 ${i} 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。</div>
+                `;
+
+                // 點擊選取/取消選取
+                div.onclick = () => {
+                    if (selectedBooks.includes(bookId)) {
+                        selectedBooks = selectedBooks.filter(id => id !== bookId);
+                        div.classList.remove('selected');
+                    } else {
+                        selectedBooks.push(bookId);
+                        div.classList.add('selected');
+                    }
+                };
+                bookGrid.appendChild(div);
+            }
+            switchView('voting-view');
+        };
+
+        // 提交投票
+        window.submitVote = async () => {
+            if (selectedBooks.length === 0) {
+                alert("請至少選擇一本書！");
+                return;
+            }
+            try {
+                // 使用 setDoc 配合 merge: true，這樣只會覆蓋該年級的投票紀錄，並保留其他年級的紀錄
+                const voteRef = doc(db, "votes", currentUser.uid);
+                await setDoc(voteRef, {
+                    [currentGrade]: selectedBooks,
+                    lastUpdated: new Date()
+                }, { merge: true });
+                
+                alert(`太棒了！你已成功提交 ${currentGrade} 的投票！🎉\n(若重覆投票，已為你更新為最新紀錄)`);
+                showMainMenu();
+            } catch (error) {
+                alert("投票提交失敗，請檢查網絡設定。錯誤：" + error.message);
+            }
+        };
+
+        // 查看龍虎榜
+        window.showLeaderboard = async () => {
+            switchView('leaderboard-view');
+            const listDiv = document.getElementById('leaderboard-list');
+            listDiv.innerHTML = '<p>載入中，請稍候...⏳</p>';
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "votes"));
+                let voteCounts = {};
+
+                // 統計所有學生的選票
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    // 遍歷文件中的每個年級陣列
+                    Object.keys(data).forEach(key => {
+                        if (Array.isArray(data[key])) {
+                            data[key].forEach(bookId => {
+                                voteCounts[bookId] = (voteCounts[bookId] || 0) + 1;
+                            });
+                        }
+                    });
+                });
+
+                // 轉換為陣列並排序
+                const sortedBooks = Object.entries(voteCounts).sort((a, b) => b[1] - a[1]);
+
+                listDiv.innerHTML = '';
+                if (sortedBooks.length === 0) {
+                    listDiv.innerHTML = '<p>目前還沒有人投票喔！快去投下神聖的一票吧！</p>';
+                    return;
+                }
+
+                // 顯示排行榜
+                sortedBooks.forEach(([bookId, count], index) => {
+                    // 簡單處理名稱 (例如 "一年級-book1" -> "一年級 - 書本 1")
+                    const displayName = bookId.replace('-book', ' - 書本 ');
+                    const item = document.createElement('div');
+                    item.className = 'leaderboard-item';
+                    item.innerHTML = `
+                        <span>${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '✨'} ${displayName}</span>
+                        <span class="votes">${count} 票</span>
+                    `;
+                    listDiv.appendChild(item);
+                });
+
+            } catch (error) {
+                listDiv.innerHTML = '<p>讀取排行榜失敗。</p>';
+                console.error(error);
+            }
+        };
+    </script>
+</body>
+</html>
