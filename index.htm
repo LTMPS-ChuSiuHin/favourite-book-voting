@@ -34,62 +34,34 @@
         }
         h1 { font-size: 2.5em; margin-bottom: 10px; }
         
-        /* 視圖切換 */
         .view { display: none; animation: fadeIn 0.5s; }
         .view.active { display: block; }
-        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 按鈕設計 */
         .btn {
             background: linear-gradient(45deg, var(--primary), var(--secondary));
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1.2em;
-            font-weight: bold;
-            border-radius: 30px;
-            cursor: pointer;
+            color: white; border: none; padding: 15px 30px; font-size: 1.2em;
+            font-weight: bold; border-radius: 30px; cursor: pointer;
             box-shadow: 0 5px 15px rgba(255,117,140,0.4);
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            margin: 10px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); margin: 10px;
         }
-        .btn:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 8px 20px rgba(255,117,140,0.6);
-        }
+        .btn:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 8px 20px rgba(255,117,140,0.6); }
         .btn-secondary { background: linear-gradient(45deg, #4facfe, #00f2fe); box-shadow: 0 5px 15px rgba(79,172,254,0.4); }
         .btn-secondary:hover { box-shadow: 0 8px 20px rgba(79,172,254,0.6); }
 
-        /* 網格佈局 */
         .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 20px;
-            max-width: 900px;
-            margin: 30px auto;
-            padding: 10px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 20px; max-width: 900px; margin: 30px auto; padding: 10px;
         }
 
-        /* 卡片設計 */
         .card {
-            background: white;
-            border-radius: 25px;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
+            background: white; border-radius: 25px; cursor: pointer; position: relative;
+            overflow: hidden; box-shadow: 0 8px 15px rgba(0,0,0,0.05); transition: all 0.3s ease;
         }
         
         .grade-card {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8em;
-            font-weight: 900;
-            color: white;
+            aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+            font-size: 1.8em; font-weight: 900; color: white;
             background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
         }
         .grade-card:nth-child(2n) { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
@@ -97,61 +69,42 @@
         .grade-card:hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 15px 25px rgba(0,0,0,0.15); }
 
         .book-card {
-            aspect-ratio: 3/4;
-            background-color: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-            color: #888;
-            border: 5px solid transparent;
+            aspect-ratio: 3/4; background-color: #f0f0f0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; font-size: 1.1em; color: #888;
+            border: 5px solid transparent; padding: 10px; text-align: center; font-weight: bold;
         }
-        .book-card img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        /* 確保圖片填滿卡片，若無圖片則顯示背景文字 */
+        .book-card img {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;
+        }
+        .book-card span { z-index: 0; } 
         
         .book-info {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 126, 179, 0.9);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-            font-size: 1em;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            text-align: left;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 126, 179, 0.95); color: white; display: flex;
+            align-items: center; justify-content: center; padding: 15px; font-size: 1em;
+            opacity: 0; transition: opacity 0.3s ease; text-align: left; z-index: 2;
         }
         .book-card:hover .book-info { opacity: 1; }
         
         .book-card.selected {
-            border-color: #ff758c;
-            transform: scale(0.95);
-            box-shadow: inset 0 0 15px rgba(255,117,140,0.5);
+            border-color: #ff758c; transform: scale(0.95); box-shadow: inset 0 0 15px rgba(255,117,140,0.5);
         }
         .book-card.selected::after {
-            content: '✔️';
-            position: absolute;
-            top: 10px; right: 10px;
-            font-size: 1.5em;
-            background: white;
-            border-radius: 50%;
-            padding: 2px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            content: '✔️'; position: absolute; top: 10px; right: 10px; font-size: 1.5em; z-index: 3;
+            background: white; border-radius: 50%; padding: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
         .leaderboard-item {
             background: white; margin: 10px auto; max-width: 600px; padding: 15px 25px;
             border-radius: 20px; display: flex; justify-content: space-between;
             align-items: center; font-size: 1.2em; font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: left;
         }
         .leaderboard-item span.votes {
-            background: var(--primary); color: white; padding: 5px 15px; border-radius: 15px;
+            background: var(--primary); color: white; padding: 5px 15px; border-radius: 15px; white-space: nowrap; margin-left: 10px;
         }
         #user-info { margin-bottom: 20px; font-weight: bold; color: #777; }
-        
-        /* 讓 Google 登入按鈕置中 */
         #google-btn-container { display: flex; justify-content: center; margin-top: 20px; }
     </style>
 </head>
@@ -161,7 +114,6 @@
     <div id="login-view" class="view active">
         <h1>📚 我最喜愛隨身書投票 🌟</h1>
         <p>請使用學校 Google 帳戶登入</p>
-        <!-- Google 登入按鈕容器 -->
         <div id="google-btn-container"></div>
     </div>
 
@@ -171,7 +123,6 @@
         <div id="user-info"></div>
         <button class="btn btn-secondary" onclick="showLeaderboard()">🏆 查看龍虎榜</button>
         <button class="btn" style="background: #ccc; box-shadow: none;" onclick="logout()">登出</button>
-        
         <div class="grid" id="grade-grid"></div>
     </div>
 
@@ -193,10 +144,91 @@
         <div id="leaderboard-list" style="margin-top: 20px;"></div>
     </div>
 
-    <!-- Firebase SDK (僅引入 Firestore，移除 Auth) -->
+    <!-- Firebase SDK (Firestore) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // ==========================================
+        // 📚 書本資料設定區 (請在這裡加入你的文字與圖片檔名)
+        // title: 書名 (留空則顯示 "書本 1")
+        // desc: 簡介文字
+        // img: 圖片路徑 (請將圖片放在與 html 同一個資料夾，或加入路徑如 "images/P1_1.jpg")
+        // ==========================================
+        const booksConfig = {
+            '一年級': [
+                { id: 'P1_1', img: 'P1_1.png', title: "不要碰我的小花", desc: "這是第 1 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。" },
+                { id: 'P1_2', img: 'P1_2.png', title: "我來幫你開", desc: "這是第 2 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。" },
+                { id: 'P1_3', img: 'P1_3.png', title: "野孩子", desc: "這是第 3 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。" },
+                { id: 'P1_4', img: 'P1_4.png', title: "紙．硯", desc: "這是第 4 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。" },
+                { id: 'P1_5', img: 'P1_5.png', title: "做一個機器人假裝是我", desc: "這是第 5 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。" },
+                { id: 'P1_6', img: 'P1_6.png', title: "探索吧！科學", desc: "這是第 6 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。" },
+                { id: 'P1_7', img: 'P1_7.png', title: "圖書館不安靜", desc: "這是第 7 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。" },
+                { id: 'P1_8', img: 'P1_8.png', title: "圖書館老鼠", desc: "這是第 8 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。" },
+                { id: 'P1_9', img: 'P1_9.png', title: "總有出路", desc: "這是第 9 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。" },
+                { id: 'P1_10', img: 'P1_10.png', title: "中國地理繪本", desc: "這是第 10 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。" }
+            ],
+            '二年級': [
+                { id: 'P2_1', img: 'P2_1.png', title: "", desc: "" },
+                { id: 'P2_2', img: 'P2_2.png', title: "", desc: "" },
+                { id: 'P2_3', img: 'P2_3.png', title: "", desc: "" },
+                { id: 'P2_4', img: 'P2_4.png', title: "", desc: "" },
+                { id: 'P2_5', img: 'P2_5.png', title: "", desc: "" },
+                { id: 'P2_6', img: 'P2_6.png', title: "", desc: "" },
+                { id: 'P2_7', img: 'P2_7.png', title: "", desc: "" },
+                { id: 'P2_8', img: 'P2_8.png', title: "", desc: "" },
+                { id: 'P2_9', img: 'P2_9.png', title: "", desc: "" },
+                { id: 'P2_10', img: 'P2_10.png', title: "", desc: "" }
+            ],
+            '三年級': [
+                { id: 'P3_1', img: 'P3_1.png', title: "", desc: "" },
+                { id: 'P3_2', img: 'P3_2.png', title: "", desc: "" },
+                { id: 'P3_3', img: 'P3_3.png', title: "", desc: "" },
+                { id: 'P3_4', img: 'P3_4.png', title: "", desc: "" },
+                { id: 'P3_5', img: 'P3_5.png', title: "", desc: "" },
+                { id: 'P3_6', img: 'P3_6.png', title: "", desc: "" },
+                { id: 'P3_7', img: 'P3_7.png', title: "", desc: "" },
+                { id: 'P3_8', img: 'P3_8.png', title: "", desc: "" },
+                { id: 'P3_9', img: 'P3_9.png', title: "", desc: "" },
+                { id: 'P3_10', img: 'P3_10.png', title: "", desc: "" }
+            ],
+            '四年級': [
+                { id: 'P4_1', img: 'P4_1.png', title: "", desc: "" },
+                { id: 'P4_2', img: 'P4_2.png', title: "", desc: "" },
+                { id: 'P4_3', img: 'P4_3.png', title: "", desc: "" },
+                { id: 'P4_4', img: 'P4_4.png', title: "", desc: "" },
+                { id: 'P4_5', img: 'P4_5.png', title: "", desc: "" },
+                { id: 'P4_6', img: 'P4_6.png', title: "", desc: "" },
+                { id: 'P4_7', img: 'P4_7.png', title: "", desc: "" },
+                { id: 'P4_8', img: 'P4_8.png', title: "", desc: "" },
+                { id: 'P4_9', img: 'P4_9.png', title: "", desc: "" },
+                { id: 'P4_10', img: 'P4_10.png', title: "", desc: "" }
+            ],
+            '五年級': [
+                { id: 'P5_1', img: 'P5_1.png', title: "", desc: "" },
+                { id: 'P5_2', img: 'P5_2.png', title: "", desc: "" },
+                { id: 'P5_3', img: 'P5_3.png', title: "", desc: "" },
+                { id: 'P5_4', img: 'P5_4.png', title: "", desc: "" },
+                { id: 'P5_5', img: 'P5_5.png', title: "", desc: "" },
+                { id: 'P5_6', img: 'P5_6.png', title: "", desc: "" },
+                { id: 'P5_7', img: 'P5_7.png', title: "", desc: "" },
+                { id: 'P5_8', img: 'P5_8.png', title: "", desc: "" },
+                { id: 'P5_9', img: 'P5_9.png', title: "", desc: "" },
+                { id: 'P5_10', img: 'P5_10.png', title: "", desc: "" }
+            ],
+            '六年級': [
+                { id: 'P6_1', img: 'P6_1.png', title: "", desc: "" },
+                { id: 'P6_2', img: 'P6_2.png', title: "", desc: "" },
+                { id: 'P6_3', img: 'P6_3.png', title: "", desc: "" },
+                { id: 'P6_4', img: 'P6_4.png', title: "", desc: "" },
+                { id: 'P6_5', img: 'P6_5.png', title: "", desc: "" },
+                { id: 'P6_6', img: 'P6_6.png', title: "", desc: "" },
+                { id: 'P6_7', img: 'P6_7.png', title: "", desc: "" },
+                { id: 'P6_8', img: 'P6_8.png', title: "", desc: "" },
+                { id: 'P6_9', img: 'P6_9.png', title: "", desc: "" },
+                { id: 'P6_10', img: 'P6_10.png', title: "", desc: "" }
+            ]
+        };
 
         // Firebase 設置
         const firebaseConfig = {
@@ -210,19 +242,14 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
-        // Google OAuth Client ID
         const GOOGLE_CLIENT_ID = "573911894747-0c28hfr0bmkjnn8pkm2msg6sjal1thqe.apps.googleusercontent.com";
 
-        // 應用狀態
         let currentUser = null;
         let currentGrade = '';
         let selectedBooks = [];
         const grades = ['一年級', '二年級', '三年級', '四年級', '五年級', '六年級'];
 
-        // ====== Google OAuth 解碼與登入邏輯 ====== //
-
-        // 解碼 Google 傳回的 JWT Token 以取得帳號資料
+        // 解碼 Google 傳回的 JWT Token
         function decodeJwtResponse(token) {
             let base64Url = token.split('.')[1];
             let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -234,35 +261,21 @@
         
         window.handleGoogleResponse = (response) => {
             const responsePayload = decodeJwtResponse(response.credential);
-            
-            // 💡 可以在這裡檢查是否為學校網域，若是請將下方程式碼取消註解並修改網域
-            /*
-            if (!responsePayload.email.endsWith("@yourschool.edu.hk")) {
-                alert("請使用學校帳戶登入！");
-                return;
-            }
-            */
-
-            // 儲存登入者資訊 (sub 是一組 Google 唯一 ID)
             currentUser = {
                 uid: responsePayload.sub,
                 name: responsePayload.name,
                 email: responsePayload.email
             };
-
-            // 登入成功，切換畫面
             document.getElementById('user-info').innerText = `你好，${currentUser.name} (${currentUser.email})`;
             initMainMenu();
             switchView('main-menu-view');
         };
 
-        // 頁面載入時初始化 Google Identity Services
         window.onload = () => {
             google.accounts.id.initialize({
                 client_id: GOOGLE_CLIENT_ID,
                 callback: handleGoogleResponse
             });
-            // 渲染官方 Google 登入按鈕
             google.accounts.id.renderButton(
                 document.getElementById("google-btn-container"),
                 { theme: "outline", size: "large", shape: "pill", text: "signin_with" }
@@ -271,11 +284,9 @@
 
         window.logout = () => { 
             currentUser = null;
-            google.accounts.id.disableAutoSelect(); // 清除 Google 自動登入狀態
+            google.accounts.id.disableAutoSelect();
             switchView('login-view');
         };
-
-        // ====== 狀態與介面控制 ====== //
 
         window.switchView = (viewId) => {
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
@@ -304,44 +315,48 @@
             const bookGrid = document.getElementById('book-grid');
             bookGrid.innerHTML = '';
 
-            // 生成 10 本隨身書
-            for (let i = 1; i <= 10; i++) {
-                const bookId = `${grade}-book${i}`;
+            const gradeBooks = booksConfig[grade];
+
+            // 根據設定檔生成書本
+            gradeBooks.forEach((book, index) => {
+                const bookNum = index + 1;
+                // 如果沒有填寫 title，預設顯示「書本 1」
+                const displayTitle = book.title !== "" ? book.title : `書本 ${bookNum}`;
+                // 如果沒有填寫 desc，預設顯示提示文字
+                const displayDesc = book.desc !== "" ? book.desc : "精彩簡介稍後補上...";
+
                 const div = document.createElement('div');
                 div.className = 'card book-card';
-                div.id = bookId;
+                div.id = book.id;
                 
+                // onerror="this.style.display='none'" 的作用是：如果圖片檔還沒放進去，就隱藏破圖圖示，只顯示背景和文字
                 div.innerHTML = `
-                    <img src="" alt="書本 ${i}">
-                    <span>書本 ${i} <br>(圖片待補)</span>
-                    <div class="book-info">這是第 ${i} 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。</div>
+                    <img src="${book.img}" alt="${displayTitle}" onerror="this.style.display='none'">
+                    <span>${displayTitle}</span>
+                    <div class="book-info">${displayDesc}</div>
                 `;
 
                 div.onclick = () => {
-                    if (selectedBooks.includes(bookId)) {
-                        selectedBooks = selectedBooks.filter(id => id !== bookId);
+                    if (selectedBooks.includes(book.id)) {
+                        selectedBooks = selectedBooks.filter(id => id !== book.id);
                         div.classList.remove('selected');
                     } else {
-                        selectedBooks.push(bookId);
+                        selectedBooks.push(book.id);
                         div.classList.add('selected');
                     }
                 };
                 bookGrid.appendChild(div);
-            }
+            });
             switchView('voting-view');
         };
 
-        // 提交投票紀錄到 Firebase Firestore
         window.submitVote = async () => {
             if (selectedBooks.length === 0) {
                 alert("請至少選擇一本書！");
                 return;
             }
             try {
-                // 使用 Google 帳戶的 uid 作為檔案名稱
                 const voteRef = doc(db, "votes", currentUser.uid);
-                
-                // setDoc 與 merge: true 保證只覆蓋今年級的紀錄，不會洗掉該學生其他年級的投票
                 await setDoc(voteRef, {
                     studentEmail: currentUser.email,
                     studentName: currentUser.name,
@@ -353,8 +368,20 @@
                 showMainMenu();
             } catch (error) {
                 alert("投票提交失敗，請檢查網路狀態及 Firebase 安全性規則。錯誤：" + error.message);
-                console.error(error);
             }
+        };
+
+        // 輔助函數：透過 ID 找回完整的書本名稱 (顯示在龍虎榜用)
+        const getBookDisplayName = (bookId) => {
+            for (const grade in booksConfig) {
+                const foundBook = booksConfig[grade].find(b => b.id === bookId);
+                if (foundBook) {
+                    const num = bookId.split('_')[1];
+                    const title = foundBook.title !== "" ? foundBook.title : `書本 ${num}`;
+                    return `${grade} - ${title}`;
+                }
+            }
+            return bookId; // 找不到就直接顯示 ID
         };
 
         window.showLeaderboard = async () => {
@@ -366,11 +393,9 @@
                 const querySnapshot = await getDocs(collection(db, "votes"));
                 let voteCounts = {};
 
-                // 遍歷所有學生的投票紀錄
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     Object.keys(data).forEach(key => {
-                        // 如果該屬性是陣列 (代表是該年級的書本紀錄)
                         if (Array.isArray(data[key])) {
                             data[key].forEach(bookId => {
                                 voteCounts[bookId] = (voteCounts[bookId] || 0) + 1;
@@ -379,7 +404,6 @@
                     });
                 });
 
-                // 將物件轉為陣列，依票數高低排序
                 const sortedBooks = Object.entries(voteCounts).sort((a, b) => b[1] - a[1]);
 
                 listDiv.innerHTML = '';
@@ -389,7 +413,7 @@
                 }
 
                 sortedBooks.forEach(([bookId, count], index) => {
-                    const displayName = bookId.replace('-book', ' - 書本 ');
+                    const displayName = getBookDisplayName(bookId);
                     const item = document.createElement('div');
                     item.className = 'leaderboard-item';
                     item.innerHTML = `
@@ -401,7 +425,6 @@
 
             } catch (error) {
                 listDiv.innerHTML = '<p>讀取排行榜失敗，請檢查 Firebase 權限設定。</p>';
-                console.error(error);
             }
         };
     </script>
