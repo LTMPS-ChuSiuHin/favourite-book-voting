@@ -162,7 +162,7 @@
         .book-card {
             aspect-ratio: 3/4; display: flex; flex-direction: column;
             align-items: center; justify-content: center; font-size: 1.1em; color: #888;
-            border: 5px solid transparent; padding: 10px; text-align: center; font-weight: bold;
+            border: 5px solid transparent; padding: 0; text-align: center; font-weight: bold;
             background-color: #fff;
         }
         .book-card img {
@@ -170,13 +170,23 @@
             transition: transform 0.5s ease;
         }
         .book-card:hover img { transform: scale(1.1); }
-        .book-card span { z-index: 0; } 
+        .book-card .no-img-text { z-index: 0; padding: 10px; position: absolute; } 
         
+        /* 新增：推介人漂浮標籤 */
+        .recommender-tag-floating {
+            position: absolute; top: 10px; left: -2px; z-index: 3;
+            background: linear-gradient(90deg, var(--primary), var(--secondary)); color: white;
+            padding: 4px 10px; border-radius: 0 15px 15px 0;
+            font-size: 0.8em; font-weight: bold;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
         .book-info {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 126, 179, 0.95); color: white; display: flex;
-            align-items: center; justify-content: center; padding: 20px; font-size: 1.1em;
-            opacity: 0; transition: all 0.4s ease; text-align: left; z-index: 2;
+            background: rgba(255, 126, 179, 0.95); color: white; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 20px; font-size: 1em;
+            opacity: 0; transition: all 0.4s ease; text-align: left; z-index: 4;
             backdrop-filter: blur(5px); transform: translateY(10px);
         }
         .book-card:hover .book-info { opacity: 1; transform: translateY(0); }
@@ -185,7 +195,7 @@
             border-color: #ff758c; transform: scale(0.95); box-shadow: 0 0 20px rgba(255,117,140,0.6);
         }
         .book-card.selected::after {
-            content: '✨已選✨'; position: absolute; top: 10px; right: 10px; font-size: 0.9em; z-index: 3;
+            content: '✨已選✨'; position: absolute; top: 10px; right: 10px; font-size: 0.9em; z-index: 5;
             background: #ff758c; color: white; border-radius: 15px; padding: 5px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
@@ -250,7 +260,6 @@
         <button class="btn btn-secondary" onclick="showLeaderboardMenu()">🏆 查看龍虎榜</button>
         <button class="btn" style="background: rgba(200,200,200,0.8); box-shadow: none; color: #555;" onclick="logout()">登出</button>
         
-        <!-- 一至六年級 (一行三個) -->
         <div class="grid-3" id="grade-grid"></div>
     </div>
 
@@ -260,7 +269,6 @@
         <p style="font-weight: bold;">點擊選擇多本喜愛的隨身書，完成後點擊最下方的「提交投票」</p>
         <button class="btn btn-secondary" onclick="showMainMenu()">⬅️ 返回主選單</button>
         
-        <!-- 書本網格 -->
         <div class="grid" id="book-grid"></div>
 
         <button class="btn" style="font-size: 1.5em; width: 80%; max-width: 400px; margin-top: 30px; padding: 20px;" onclick="submitVote()">🚀 提交投票</button>
@@ -271,14 +279,12 @@
         <h1>🏆 我最喜愛隨身書龍虎榜 🏆</h1>
         <button class="btn btn-secondary" onclick="showMainMenu()">⬅️ 返回主選單</button>
         
-        <!-- 各級首名方格 (置頂於一至六年級上方) -->
         <div style="max-width: 900px; margin: 30px auto 10px; padding: 0 10px;">
             <div class="card grade-card" style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); aspect-ratio: auto; padding: 25px; flex-direction: row; gap: 15px; font-size: 2em; box-shadow: 0 10px 20px rgba(253,160,133,0.3);" onclick="openLeaderboardDetail('top')">
                 👑 各級首名
             </div>
         </div>
 
-        <!-- 龍虎榜一至六年級 (一行三個) -->
         <div class="grid-3" id="leaderboard-grid"></div>
     </div>
 
@@ -294,78 +300,81 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
+        // ==========================================
+        // 加入推介人設定： recommender: "名字"
+        // ==========================================
         const booksConfig = {
             '一年級': [
-                { id: 'P1_1', img: 'P1_1.png', title: "不要碰我的小花", desc: "這是一本關於保護與分享的故事，畫風可愛，非常適合一年級小朋友閱讀。" },
-                { id: 'P1_2', img: 'P1_2.png', title: "我來幫你開", desc: "學習互助合作的美好繪本。" },
-                { id: 'P1_3', img: 'P1_3.png', title: "野孩子", desc: "在大自然中探索的奇妙旅程。" },
-                { id: 'P1_4', img: 'P1_4.png', title: "紙．硯", desc: "傳統文化與現代繪畫的結合。" },
-                { id: 'P1_5', img: 'P1_5.png', title: "做一個機器人假裝是我", desc: "發揮無限想像力的科幻小故事。" },
-                { id: 'P1_6', img: 'P1_6.png', title: "探索吧！科學", desc: "啟發好奇心，打開科學的大門。" },
-                { id: 'P1_7', img: 'P1_7.png', title: "圖書館不安靜", desc: "圖書館裡發生了什麼有趣的事呢？" },
-                { id: 'P1_8', img: 'P1_8.png', title: "圖書館老鼠", desc: "一隻熱愛閱讀的小老鼠的冒險。" },
-                { id: 'P1_9', img: 'P1_9.png', title: "總有出路", desc: "教導孩子面對困難時尋找解決方法的勵志書。" },
-                { id: 'P1_10', img: 'P1_10.png', title: "中國地理繪本", desc: "透過精美圖畫認識美麗的河山。" }
+                { id: 'P1_1', img: 'P1_1.png', title: "不要碰我的小花", desc: "這是一本關於保護與分享的故事，畫風可愛，非常適合一年級小朋友閱讀。", recommender: "" },
+                { id: 'P1_2', img: 'P1_2.png', title: "我來幫你開", desc: "學習互助合作的美好繪本。", recommender: "" },
+                { id: 'P1_3', img: 'P1_3.png', title: "野孩子", desc: "在大自然中探索的奇妙旅程。", recommender: "" },
+                { id: 'P1_4', img: 'P1_4.png', title: "紙．硯", desc: "傳統文化與現代繪畫的結合。", recommender: "" },
+                { id: 'P1_5', img: 'P1_5.png', title: "做一個機器人假裝是我", desc: "發揮無限想像力的科幻小故事。", recommender: "" },
+                { id: 'P1_6', img: 'P1_6.png', title: "探索吧！科學", desc: "啟發好奇心，打開科學的大門。", recommender: "" },
+                { id: 'P1_7', img: 'P1_7.png', title: "圖書館不安靜", desc: "圖書館裡發生了什麼有趣的事呢？", recommender: "" },
+                { id: 'P1_8', img: 'P1_8.png', title: "圖書館老鼠", desc: "一隻熱愛閱讀的小老鼠的冒險。", recommender: "" },
+                { id: 'P1_9', img: 'P1_9.png', title: "總有出路", desc: "教導孩子面對困難時尋找解決方法的勵志書。", recommender: "" },
+                { id: 'P1_10', img: 'P1_10.png', title: "中國地理繪本", desc: "透過精美圖畫認識美麗的河山。", recommender: "" }
             ],
             '二年級': [
-                { id: 'P2_1', img: 'P2_1.png', title: "", desc: "" },
-                { id: 'P2_2', img: 'P2_2.png', title: "", desc: "" },
-                { id: 'P2_3', img: 'P2_3.png', title: "", desc: "" },
-                { id: 'P2_4', img: 'P2_4.png', title: "", desc: "" },
-                { id: 'P2_5', img: 'P2_5.png', title: "", desc: "" },
-                { id: 'P2_6', img: 'P2_6.png', title: "", desc: "" },
-                { id: 'P2_7', img: 'P2_7.png', title: "", desc: "" },
-                { id: 'P2_8', img: 'P2_8.png', title: "", desc: "" },
-                { id: 'P2_9', img: 'P2_9.png', title: "", desc: "" },
-                { id: 'P2_10', img: 'P2_10.png', title: "", desc: "" }
+                { id: 'P2_1', img: 'P2_1.png', title: "", desc: "", recommender: "" },
+                { id: 'P2_2', img: 'P2_2.png', title: "", desc: "", recommender: "" },
+                { id: 'P2_3', img: 'P2_3.png', title: "", desc: "", recommender: "" },
+                { id: 'P2_4', img: 'P2_4.png', title: "", desc: "", recommender: "" },
+                { id: 'P2_5', img: 'P2_5.png', title: "", desc: "", recommender: "" },
+                { id: 'P2_6', img: 'P2_6.png', title: "", desc: "", recommender: "" },
+                { id: 'P2_7', img: 'P2_7.png', title: "", desc: "", recommender: "" },
+                { id: 'P2_8', img: 'P2_8.png', title: "", desc: "", recommender: "" },
+                { id: 'P2_9', img: 'P2_9.png', title: "", desc: "", recommender: "" },
+                { id: 'P2_10', img: 'P2_10.png', title: "", desc: "", recommender: "" }
             ],
             '三年級': [
-                { id: 'P3_1', img: 'P3_1.png', title: "", desc: "" },
-                { id: 'P3_2', img: 'P3_2.png', title: "", desc: "" },
-                { id: 'P3_3', img: 'P3_3.png', title: "", desc: "" },
-                { id: 'P3_4', img: 'P3_4.png', title: "", desc: "" },
-                { id: 'P3_5', img: 'P3_5.png', title: "", desc: "" },
-                { id: 'P3_6', img: 'P3_6.png', title: "", desc: "" },
-                { id: 'P3_7', img: 'P3_7.png', title: "", desc: "" },
-                { id: 'P3_8', img: 'P3_8.png', title: "", desc: "" },
-                { id: 'P3_9', img: 'P3_9.png', title: "", desc: "" },
-                { id: 'P3_10', img: 'P3_10.png', title: "", desc: "" }
+                { id: 'P3_1', img: 'P3_1.png', title: "", desc: "", recommender: "" },
+                { id: 'P3_2', img: 'P3_2.png', title: "", desc: "", recommender: "" },
+                { id: 'P3_3', img: 'P3_3.png', title: "", desc: "", recommender: "" },
+                { id: 'P3_4', img: 'P3_4.png', title: "", desc: "", recommender: "" },
+                { id: 'P3_5', img: 'P3_5.png', title: "", desc: "", recommender: "" },
+                { id: 'P3_6', img: 'P3_6.png', title: "", desc: "", recommender: "" },
+                { id: 'P3_7', img: 'P3_7.png', title: "", desc: "", recommender: "" },
+                { id: 'P3_8', img: 'P3_8.png', title: "", desc: "", recommender: "" },
+                { id: 'P3_9', img: 'P3_9.png', title: "", desc: "", recommender: "" },
+                { id: 'P3_10', img: 'P3_10.png', title: "", desc: "", recommender: "" }
             ],
             '四年級': [
-                { id: 'P4_1', img: 'P4_1.png', title: "", desc: "" },
-                { id: 'P4_2', img: 'P4_2.png', title: "", desc: "" },
-                { id: 'P4_3', img: 'P4_3.png', title: "", desc: "" },
-                { id: 'P4_4', img: 'P4_4.png', title: "", desc: "" },
-                { id: 'P4_5', img: 'P4_5.png', title: "", desc: "" },
-                { id: 'P4_6', img: 'P4_6.png', title: "", desc: "" },
-                { id: 'P4_7', img: 'P4_7.png', title: "", desc: "" },
-                { id: 'P4_8', img: 'P4_8.png', title: "", desc: "" },
-                { id: 'P4_9', img: 'P4_9.png', title: "", desc: "" },
-                { id: 'P4_10', img: 'P4_10.png', title: "", desc: "" }
+                { id: 'P4_1', img: 'P4_1.png', title: "", desc: "", recommender: "" },
+                { id: 'P4_2', img: 'P4_2.png', title: "", desc: "", recommender: "" },
+                { id: 'P4_3', img: 'P4_3.png', title: "", desc: "", recommender: "" },
+                { id: 'P4_4', img: 'P4_4.png', title: "", desc: "", recommender: "" },
+                { id: 'P4_5', img: 'P4_5.png', title: "", desc: "", recommender: "" },
+                { id: 'P4_6', img: 'P4_6.png', title: "", desc: "", recommender: "" },
+                { id: 'P4_7', img: 'P4_7.png', title: "", desc: "", recommender: "" },
+                { id: 'P4_8', img: 'P4_8.png', title: "", desc: "", recommender: "" },
+                { id: 'P4_9', img: 'P4_9.png', title: "", desc: "", recommender: "" },
+                { id: 'P4_10', img: 'P4_10.png', title: "", desc: "", recommender: "" }
             ],
             '五年級': [
-                { id: 'P5_1', img: 'P5_1.png', title: "", desc: "" },
-                { id: 'P5_2', img: 'P5_2.png', title: "", desc: "" },
-                { id: 'P5_3', img: 'P5_3.png', title: "", desc: "" },
-                { id: 'P5_4', img: 'P5_4.png', title: "", desc: "" },
-                { id: 'P5_5', img: 'P5_5.png', title: "", desc: "" },
-                { id: 'P5_6', img: 'P5_6.png', title: "", desc: "" },
-                { id: 'P5_7', img: 'P5_7.png', title: "", desc: "" },
-                { id: 'P5_8', img: 'P5_8.png', title: "", desc: "" },
-                { id: 'P5_9', img: 'P5_9.png', title: "", desc: "" },
-                { id: 'P5_10', img: 'P5_10.png', title: "", desc: "" }
+                { id: 'P5_1', img: 'P5_1.png', title: "", desc: "", recommender: "" },
+                { id: 'P5_2', img: 'P5_2.png', title: "", desc: "", recommender: "" },
+                { id: 'P5_3', img: 'P5_3.png', title: "", desc: "", recommender: "" },
+                { id: 'P5_4', img: 'P5_4.png', title: "", desc: "", recommender: "" },
+                { id: 'P5_5', img: 'P5_5.png', title: "", desc: "", recommender: "" },
+                { id: 'P5_6', img: 'P5_6.png', title: "", desc: "", recommender: "" },
+                { id: 'P5_7', img: 'P5_7.png', title: "", desc: "", recommender: "" },
+                { id: 'P5_8', img: 'P5_8.png', title: "", desc: "", recommender: "" },
+                { id: 'P5_9', img: 'P5_9.png', title: "", desc: "", recommender: "" },
+                { id: 'P5_10', img: 'P5_10.png', title: "", desc: "", recommender: "" }
             ],
             '六年級': [
-                { id: 'P6_1', img: 'P6_1.png', title: "", desc: "" },
-                { id: 'P6_2', img: 'P6_2.png', title: "", desc: "" },
-                { id: 'P6_3', img: 'P6_3.png', title: "", desc: "" },
-                { id: 'P6_4', img: 'P6_4.png', title: "", desc: "" },
-                { id: 'P6_5', img: 'P6_5.png', title: "", desc: "" },
-                { id: 'P6_6', img: 'P6_6.png', title: "", desc: "" },
-                { id: 'P6_7', img: 'P6_7.png', title: "", desc: "" },
-                { id: 'P6_8', img: 'P6_8.png', title: "", desc: "" },
-                { id: 'P6_9', img: 'P6_9.png', title: "", desc: "" },
-                { id: 'P6_10', img: 'P6_10.png', title: "", desc: "" }
+                { id: 'P6_1', img: 'P6_1.png', title: "", desc: "", recommender: "" },
+                { id: 'P6_2', img: 'P6_2.png', title: "", desc: "", recommender: "" },
+                { id: 'P6_3', img: 'P6_3.png', title: "", desc: "", recommender: "" },
+                { id: 'P6_4', img: 'P6_4.png', title: "", desc: "", recommender: "" },
+                { id: 'P6_5', img: 'P6_5.png', title: "", desc: "", recommender: "" },
+                { id: 'P6_6', img: 'P6_6.png', title: "", desc: "", recommender: "" },
+                { id: 'P6_7', img: 'P6_7.png', title: "", desc: "", recommender: "" },
+                { id: 'P6_8', img: 'P6_8.png', title: "", desc: "", recommender: "" },
+                { id: 'P6_9', img: 'P6_9.png', title: "", desc: "", recommender: "" },
+                { id: 'P6_10', img: 'P6_10.png', title: "", desc: "", recommender: "" }
             ]
         };
 
@@ -458,15 +467,24 @@
                 const bookNum = index + 1;
                 const displayTitle = book.title !== "" ? book.title : `書本 ${bookNum}`;
                 const displayDesc = book.desc !== "" ? book.desc : "精彩簡介稍後補上...";
+                const displayRecommender = book.recommender !== "" ? book.recommender : "稍後公佈";
 
                 const div = document.createElement('div');
                 div.className = 'card book-card';
                 div.id = book.id;
                 
+                // 加入漂浮標籤與詳細資訊
                 div.innerHTML = `
+                    <div class="recommender-tag-floating">👤 ${displayRecommender}</div>
                     <img src="${book.img}" alt="${displayTitle}" onerror="this.style.display='none'">
-                    <span>${displayTitle}</span>
-                    <div class="book-info">${displayDesc}</div>
+                    <span class="no-img-text">${displayTitle}</span>
+                    <div class="book-info">
+                        <h4 style="margin: 0 0 10px 0; font-size: 1.2em;">${displayTitle}</h4>
+                        <p style="margin: 0 0 10px 0; font-size: 0.9em; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 10px;">
+                            <strong>👤 推介人：${displayRecommender}</strong>
+                        </p>
+                        <span style="font-size: 0.9em;">${displayDesc}</span>
+                    </div>
                 `;
 
                 div.onclick = () => {
@@ -519,14 +537,16 @@
             });
         };
 
+        // 修改：一併回傳推介人資料
         const getBookInfo = (bookId, grade) => {
             const foundBook = booksConfig[grade].find(b => b.id === bookId);
             if (foundBook) {
                 const num = bookId.split('_')[1];
                 const title = foundBook.title !== "" ? foundBook.title : `書本 ${num}`;
-                return { title: title, img: foundBook.img };
+                const recommender = foundBook.recommender !== "" ? foundBook.recommender : "稍後公佈";
+                return { title: title, img: foundBook.img, recommender: recommender };
             }
-            return { title: bookId, img: '' };
+            return { title: bookId, img: '', recommender: '未知' };
         };
 
         window.openLeaderboardDetail = async (category) => {
@@ -573,6 +593,7 @@
                             const topBookCount = sortedBooks[0][1];
                             const bookInfo = getBookInfo(topBookId, grade);
                             
+                            // 榜單加入推介人顯示
                             html += `
                                 <div class="leaderboard-item">
                                     <div style="display: flex; align-items: center;">
@@ -581,6 +602,7 @@
                                         <div style="display: flex; flex-direction: column;">
                                             <span style="font-size: 0.8em; color: #888; font-weight: normal;">${grade}</span>
                                             <span style="font-size: 1.1em;">${bookInfo.title}</span>
+                                            <span style="font-size: 0.85em; color: var(--primary); margin-top: 3px;">👤 推介人：${bookInfo.recommender}</span>
                                         </div>
                                     </div>
                                     <span class="votes">${topBookCount} 票</span>
@@ -604,12 +626,16 @@
                         else if (index === 1 && count > 0) rankIcon = `<span style="font-size: 1.8em; width: 40px; display: inline-block; text-align: center;">🥈</span>`;
                         else if (index === 2 && count > 0) rankIcon = `<span style="font-size: 1.8em; width: 40px; display: inline-block; text-align: center;">🥉</span>`;
 
+                        // 榜單加入推介人顯示
                         html += `
                             <div class="leaderboard-item">
                                 <div style="display: flex; align-items: center;">
                                     ${rankIcon}
                                     <img src="${bookInfo.img}" class="leaderboard-img" onerror="this.style.display='none'">
-                                    <span style="font-size: 1.1em;">${bookInfo.title}</span>
+                                    <div style="display: flex; flex-direction: column; justify-content: center;">
+                                        <span style="font-size: 1.1em;">${bookInfo.title}</span>
+                                        <span style="font-size: 0.85em; color: var(--primary); margin-top: 3px;">👤 推介人：${bookInfo.recommender}</span>
+                                    </div>
                                 </div>
                                 <span class="votes">${count} 票</span>
                             </div>
