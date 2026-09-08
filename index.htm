@@ -73,7 +73,6 @@
             align-items: center; justify-content: center; font-size: 1.1em; color: #888;
             border: 5px solid transparent; padding: 10px; text-align: center; font-weight: bold;
         }
-        /* 確保圖片填滿卡片，若無圖片則顯示背景文字 */
         .book-card img {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;
         }
@@ -95,15 +94,21 @@
             background: white; border-radius: 50%; padding: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
+        /* 排行榜項目樣式更新 */
         .leaderboard-item {
-            background: white; margin: 10px auto; max-width: 600px; padding: 15px 25px;
+            background: white; margin: 10px auto; max-width: 650px; padding: 15px 25px;
             border-radius: 20px; display: flex; justify-content: space-between;
             align-items: center; font-size: 1.2em; font-weight: bold;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: left;
         }
+        .leaderboard-img {
+            width: 45px; height: 60px; object-fit: cover; border-radius: 5px; 
+            margin: 0 15px; background-color: #f0f0f0; border: 1px solid #ddd;
+        }
         .leaderboard-item span.votes {
             background: var(--primary); color: white; padding: 5px 15px; border-radius: 15px; white-space: nowrap; margin-left: 10px;
         }
+        
         #user-info { margin-bottom: 20px; font-weight: bold; color: #777; }
         #google-btn-container { display: flex; justify-content: center; margin-top: 20px; }
     </style>
@@ -149,12 +154,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // ==========================================
-        // 📚 書本資料設定區 (請在這裡加入你的文字與圖片檔名)
-        // title: 書名 (留空則顯示 "書本 1")
-        // desc: 簡介文字
-        // img: 圖片路徑 (請將圖片放在與 html 同一個資料夾，或加入路徑如 "images/P1_1.jpg")
-        // ==========================================
         const booksConfig = {
             '一年級': [
                 { id: 'P1_1', img: 'P1_1.png', title: "不要碰我的小花", desc: "這是第 1 本書的精彩簡介...當你補上真實資料後，這裡會顯示書本的詳細內容。" },
@@ -230,7 +229,6 @@
             ]
         };
 
-        // Firebase 設置
         const firebaseConfig = {
             apiKey: "AIzaSyBHL8yscpNGsXDUAFa7dBNywztX3-mDuuM",
             authDomain: "lunch-announcement-9f0d5.firebaseapp.com",
@@ -249,7 +247,6 @@
         let selectedBooks = [];
         const grades = ['一年級', '二年級', '三年級', '四年級', '五年級', '六年級'];
 
-        // 解碼 Google 傳回的 JWT Token
         function decodeJwtResponse(token) {
             let base64Url = token.split('.')[1];
             let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -317,19 +314,15 @@
 
             const gradeBooks = booksConfig[grade];
 
-            // 根據設定檔生成書本
             gradeBooks.forEach((book, index) => {
                 const bookNum = index + 1;
-                // 如果沒有填寫 title，預設顯示「書本 1」
                 const displayTitle = book.title !== "" ? book.title : `書本 ${bookNum}`;
-                // 如果沒有填寫 desc，預設顯示提示文字
                 const displayDesc = book.desc !== "" ? book.desc : "精彩簡介稍後補上...";
 
                 const div = document.createElement('div');
                 div.className = 'card book-card';
                 div.id = book.id;
                 
-                // onerror="this.style.display='none'" 的作用是：如果圖片檔還沒放進去，就隱藏破圖圖示，只顯示背景和文字
                 div.innerHTML = `
                     <img src="${book.img}" alt="${displayTitle}" onerror="this.style.display='none'">
                     <span>${displayTitle}</span>
@@ -357,31 +350,33 @@
             }
             try {
                 const voteRef = doc(db, "votes", currentUser.uid);
+                
+                // ⚠️ 重大修改：移除了 { merge: true }
+                // 現在無論學生原本投哪個年級，只要提交新投票，整份個人資料都會被覆蓋。
+                // 確保每位學生永遠只計算「最近一次、單一個年級」的投票紀錄。
                 await setDoc(voteRef, {
                     studentEmail: currentUser.email,
                     studentName: currentUser.name,
                     [currentGrade]: selectedBooks,
                     lastUpdated: new Date()
-                }, { merge: true });
+                });
                 
-                alert(`太棒了！你已成功提交 ${currentGrade} 的投票！🎉`);
+                alert(`太棒了！你已成功提交 ${currentGrade} 的投票！🎉\n(系統已為你更新為最新紀錄)`);
                 showMainMenu();
             } catch (error) {
                 alert("投票提交失敗，請檢查網路狀態及 Firebase 安全性規則。錯誤：" + error.message);
             }
         };
 
-        // 輔助函數：透過 ID 找回完整的書本名稱 (顯示在龍虎榜用)
-        const getBookDisplayName = (bookId) => {
-            for (const grade in booksConfig) {
-                const foundBook = booksConfig[grade].find(b => b.id === bookId);
-                if (foundBook) {
-                    const num = bookId.split('_')[1];
-                    const title = foundBook.title !== "" ? foundBook.title : `書本 ${num}`;
-                    return `${grade} - ${title}`;
-                }
+        // 輔助函數：透過 ID 找回完整的書本名稱與圖片路徑
+        const getBookInfo = (bookId, grade) => {
+            const foundBook = booksConfig[grade].find(b => b.id === bookId);
+            if (foundBook) {
+                const num = bookId.split('_')[1];
+                const title = foundBook.title !== "" ? foundBook.title : `書本 ${num}`;
+                return { title: title, img: foundBook.img };
             }
-            return bookId; // 找不到就直接顯示 ID
+            return { title: bookId, img: '' };
         };
 
         window.showLeaderboard = async () => {
@@ -391,40 +386,97 @@
 
             try {
                 const querySnapshot = await getDocs(collection(db, "votes"));
-                let voteCounts = {};
+                
+                // 初始化統計資料
+                let votersCount = {}; // 計算各年級投票人數
+                let votesCount = {};  // 計算各年級書本票數
+                
+                grades.forEach(g => {
+                    votersCount[g] = 0;
+                    votesCount[g] = {};
+                    booksConfig[g].forEach(b => {
+                        votesCount[g][b.id] = 0; // 每本書預設 0 票，確保都能顯示在榜上
+                    });
+                });
 
+                // 統計投票
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    Object.keys(data).forEach(key => {
-                        if (Array.isArray(data[key])) {
-                            data[key].forEach(bookId => {
-                                voteCounts[bookId] = (voteCounts[bookId] || 0) + 1;
+                    grades.forEach(g => {
+                        // 如果這份紀錄裡有該年級的投票陣列，代表他最新一次投票是在這個年級
+                        if (data[g] && Array.isArray(data[g])) {
+                            votersCount[g]++;
+                            data[g].forEach(bookId => {
+                                if(votesCount[g][bookId] !== undefined) {
+                                    votesCount[g][bookId]++;
+                                }
                             });
                         }
                     });
                 });
 
-                const sortedBooks = Object.entries(voteCounts).sort((a, b) => b[1] - a[1]);
+                let html = '';
 
-                listDiv.innerHTML = '';
-                if (sortedBooks.length === 0) {
-                    listDiv.innerHTML = '<p>目前還沒有人投票喔！</p>';
-                    return;
-                }
-
-                sortedBooks.forEach(([bookId, count], index) => {
-                    const displayName = getBookDisplayName(bookId);
-                    const item = document.createElement('div');
-                    item.className = 'leaderboard-item';
-                    item.innerHTML = `
-                        <span>${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '✨'} ${displayName}</span>
-                        <span class="votes">${count} 票</span>
-                    `;
-                    listDiv.appendChild(item);
+                // 1. 各級首名專區
+                html += `<h2 style="color: var(--primary); border-bottom: 2px dashed var(--primary); padding-bottom: 10px;">👑 各級首名 👑</h2>`;
+                grades.forEach(grade => {
+                    const sortedBooks = Object.entries(votesCount[grade]).sort((a, b) => b[1] - a[1]);
+                    // 只顯示有獲得票數的第一名
+                    if (sortedBooks.length > 0 && sortedBooks[0][1] > 0) { 
+                        const topBookId = sortedBooks[0][0];
+                        const topBookCount = sortedBooks[0][1];
+                        const bookInfo = getBookInfo(topBookId, grade);
+                        
+                        html += `
+                            <div class="leaderboard-item">
+                                <div style="display: flex; align-items: center;">
+                                    <span style="font-size: 1.5em; margin-right: 15px;">🏆</span>
+                                    <img src="${bookInfo.img}" class="leaderboard-img" onerror="this.style.display='none'">
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span style="font-size: 0.8em; color: #888; font-weight: normal;">${grade}</span>
+                                        <span>${bookInfo.title}</span>
+                                    </div>
+                                </div>
+                                <span class="votes">${topBookCount} 票</span>
+                            </div>
+                        `;
+                    }
                 });
+
+                // 2. 六個年級的詳細榜單
+                grades.forEach(grade => {
+                    html += `<h2 style="margin-top: 50px; color: var(--secondary);">${grade}榜單</h2>`;
+                    html += `<p style="font-size: 1.1em; color: #555;">👤 本級投票總人數：<span style="font-weight: 900; color: var(--primary);">${votersCount[grade]}</span> 人</p>`;
+                    
+                    const sortedBooks = Object.entries(votesCount[grade]).sort((a, b) => b[1] - a[1]);
+                    
+                    sortedBooks.forEach(([bookId, count], index) => {
+                        const bookInfo = getBookInfo(bookId, grade);
+                        
+                        // 處理前三名圖示 (只有在有票數的情況下才給獎牌，不然統一給數字)
+                        let rankIcon = `<span style="width: 35px; display: inline-block; text-align: center;">${index + 1}.</span>`;
+                        if (index === 0 && count > 0) rankIcon = `<span style="font-size: 1.5em; width: 35px; display: inline-block; text-align: center;">🥇</span>`;
+                        else if (index === 1 && count > 0) rankIcon = `<span style="font-size: 1.5em; width: 35px; display: inline-block; text-align: center;">🥈</span>`;
+                        else if (index === 2 && count > 0) rankIcon = `<span style="font-size: 1.5em; width: 35px; display: inline-block; text-align: center;">🥉</span>`;
+
+                        html += `
+                            <div class="leaderboard-item">
+                                <div style="display: flex; align-items: center;">
+                                    ${rankIcon}
+                                    <img src="${bookInfo.img}" class="leaderboard-img" onerror="this.style.display='none'">
+                                    <span>${bookInfo.title}</span>
+                                </div>
+                                <span class="votes">${count} 票</span>
+                            </div>
+                        `;
+                    });
+                });
+
+                listDiv.innerHTML = html;
 
             } catch (error) {
                 listDiv.innerHTML = '<p>讀取排行榜失敗，請檢查 Firebase 權限設定。</p>';
+                console.error(error);
             }
         };
     </script>
