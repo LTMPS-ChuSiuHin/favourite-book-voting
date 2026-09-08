@@ -161,7 +161,7 @@
     <div id="login-view" class="view active">
         <h1>📚 我最喜愛隨身書投票 🌟</h1>
         <p>請使用學校 Google 帳戶登入</p>
-        <!-- 這裡將會渲染官方的 Google 登入按鈕 -->
+        <!-- Google 登入按鈕容器 -->
         <div id="google-btn-container"></div>
     </div>
 
@@ -193,13 +193,12 @@
         <div id="leaderboard-list" style="margin-top: 20px;"></div>
     </div>
 
-    <!-- Firebase SDK & 邏輯 -->
+    <!-- Firebase SDK (僅引入 Firestore，移除 Auth) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        // 改為引入 signInWithCredential
-        import { getAuth, signInWithCredential, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
+        // Firebase 設置
         const firebaseConfig = {
             apiKey: "AIzaSyBHL8yscpNGsXDUAFa7dBNywztX3-mDuuM",
             authDomain: "lunch-announcement-9f0d5.firebaseapp.com",
@@ -210,28 +209,51 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
 
         // Google OAuth Client ID
         const GOOGLE_CLIENT_ID = "573911894747-0c28hfr0bmkjnn8pkm2msg6sjal1thqe.apps.googleusercontent.com";
 
+        // 應用狀態
         let currentUser = null;
         let currentGrade = '';
         let selectedBooks = [];
         const grades = ['一年級', '二年級', '三年級', '四年級', '五年級', '六年級'];
 
-        // ====== Google OAuth 登入邏輯 ====== //
+        // ====== Google OAuth 解碼與登入邏輯 ====== //
+
+        // 解碼 Google 傳回的 JWT Token 以取得帳號資料
+        function decodeJwtResponse(token) {
+            let base64Url = token.split('.')[1];
+            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
         
-        // 此函數負責接收 Google 回傳的 OAuth 憑證，並轉交給 Firebase 登入
         window.handleGoogleResponse = (response) => {
-            // 將 Google OAuth 的 JWT 憑證轉換為 Firebase 的憑證
-            const credential = GoogleAuthProvider.credential(response.credential);
+            const responsePayload = decodeJwtResponse(response.credential);
             
-            signInWithCredential(auth, credential).catch((error) => {
-                console.error("登入失敗：", error);
-                alert("登入發生錯誤：" + error.message);
-            });
+            // 💡 可以在這裡檢查是否為學校網域，若是請將下方程式碼取消註解並修改網域
+            /*
+            if (!responsePayload.email.endsWith("@yourschool.edu.hk")) {
+                alert("請使用學校帳戶登入！");
+                return;
+            }
+            */
+
+            // 儲存登入者資訊 (sub 是一組 Google 唯一 ID)
+            currentUser = {
+                uid: responsePayload.sub,
+                name: responsePayload.name,
+                email: responsePayload.email
+            };
+
+            // 登入成功，切換畫面
+            document.getElementById('user-info').innerText = `你好，${currentUser.name} (${currentUser.email})`;
+            initMainMenu();
+            switchView('main-menu-view');
         };
 
         // 頁面載入時初始化 Google Identity Services
@@ -240,7 +262,7 @@
                 client_id: GOOGLE_CLIENT_ID,
                 callback: handleGoogleResponse
             });
-            // 渲染客製化 Google 登入按鈕
+            // 渲染官方 Google 登入按鈕
             google.accounts.id.renderButton(
                 document.getElementById("google-btn-container"),
                 { theme: "outline", size: "large", shape: "pill", text: "signin_with" }
@@ -248,29 +270,18 @@
         };
 
         window.logout = () => { 
-            signOut(auth);
-            // 登出時順便清除 Google 的本地登入狀態
-            google.accounts.id.disableAutoSelect();
+            currentUser = null;
+            google.accounts.id.disableAutoSelect(); // 清除 Google 自動登入狀態
+            switchView('login-view');
         };
 
         // ====== 狀態與介面控制 ====== //
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('user-info').innerText = `你好，${user.displayName} (${user.email})`;
-                initMainMenu();
-                switchView('main-menu-view');
-            } else {
-                currentUser = null;
-                switchView('login-view');
-            }
-        });
 
         window.switchView = (viewId) => {
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
             document.getElementById(viewId).classList.add('active');
         };
+        
         window.showMainMenu = () => switchView('main-menu-view');
 
         function initMainMenu() {
@@ -293,6 +304,7 @@
             const bookGrid = document.getElementById('book-grid');
             bookGrid.innerHTML = '';
 
+            // 生成 10 本隨身書
             for (let i = 1; i <= 10; i++) {
                 const bookId = `${grade}-book${i}`;
                 const div = document.createElement('div');
@@ -319,14 +331,20 @@
             switchView('voting-view');
         };
 
+        // 提交投票紀錄到 Firebase Firestore
         window.submitVote = async () => {
             if (selectedBooks.length === 0) {
                 alert("請至少選擇一本書！");
                 return;
             }
             try {
+                // 使用 Google 帳戶的 uid 作為檔案名稱
                 const voteRef = doc(db, "votes", currentUser.uid);
+                
+                // setDoc 與 merge: true 保證只覆蓋今年級的紀錄，不會洗掉該學生其他年級的投票
                 await setDoc(voteRef, {
+                    studentEmail: currentUser.email,
+                    studentName: currentUser.name,
                     [currentGrade]: selectedBooks,
                     lastUpdated: new Date()
                 }, { merge: true });
@@ -334,7 +352,8 @@
                 alert(`太棒了！你已成功提交 ${currentGrade} 的投票！🎉`);
                 showMainMenu();
             } catch (error) {
-                alert("投票提交失敗，請檢查網絡設定。錯誤：" + error.message);
+                alert("投票提交失敗，請檢查網路狀態及 Firebase 安全性規則。錯誤：" + error.message);
+                console.error(error);
             }
         };
 
@@ -347,9 +366,11 @@
                 const querySnapshot = await getDocs(collection(db, "votes"));
                 let voteCounts = {};
 
+                // 遍歷所有學生的投票紀錄
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     Object.keys(data).forEach(key => {
+                        // 如果該屬性是陣列 (代表是該年級的書本紀錄)
                         if (Array.isArray(data[key])) {
                             data[key].forEach(bookId => {
                                 voteCounts[bookId] = (voteCounts[bookId] || 0) + 1;
@@ -358,6 +379,7 @@
                     });
                 });
 
+                // 將物件轉為陣列，依票數高低排序
                 const sortedBooks = Object.entries(voteCounts).sort((a, b) => b[1] - a[1]);
 
                 listDiv.innerHTML = '';
@@ -378,7 +400,8 @@
                 });
 
             } catch (error) {
-                listDiv.innerHTML = '<p>讀取排行榜失敗。</p>';
+                listDiv.innerHTML = '<p>讀取排行榜失敗，請檢查 Firebase 權限設定。</p>';
+                console.error(error);
             }
         };
     </script>
