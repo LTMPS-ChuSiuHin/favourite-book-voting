@@ -68,7 +68,7 @@
             100% { transform: translateY(-120vh) rotate(20deg) scale(1.2); opacity: 0; }
         }
 
-        /* 標題與漸層文字 (修復 Emoji 顯示問題) */
+        /* 標題與漸層文字 */
         h1, h2 {
             font-weight: 900;
             letter-spacing: 2px;
@@ -77,7 +77,6 @@
         }
         h1 { font-size: 2.8em; }
         
-        /* 專門給文字的漸層，避開 emoji */
         .gradient-text {
             background: linear-gradient(90deg, #ff5e7e, #ff9a9e, #ff5e7e);
             background-size: 200% auto;
@@ -183,10 +182,11 @@
             box-shadow: 2px 2px 8px rgba(0,0,0,0.2); text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
 
+        /* 卡片的已選狀態 (移動至右下角並改文字) */
         .book-card.selected { border-color: #ff758c; transform: scale(0.95); box-shadow: 0 0 20px rgba(255,117,140,0.6); }
         .book-card.selected::after {
-            content: '✨已投票✨'; /* 改為已投票 */
-            position: absolute; top: 10px; right: 10px; font-size: 0.9em; z-index: 5;
+            content: '✨已選✨';
+            position: absolute; bottom: 10px; right: 10px; font-size: 0.9em; z-index: 5;
             background: #ff758c; color: white; border-radius: 15px; padding: 5px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
@@ -216,12 +216,31 @@
             transform: translate(-50%, -50%) scale(1);
         }
 
+        /* ⚠️ 新增：當書本被選取時，連帶改變懸浮框的樣式 */
+        .book-card.selected + .book-detail-popup {
+            border: 4px solid #ff5e7e;
+            background: rgba(255, 240, 245, 0.96); /* 稍微帶點粉紅色的背景 */
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25), 0 0 45px rgba(255, 94, 126, 0.8);
+        }
+        
+        /* ⚠️ 新增：當書本被選取時，懸浮框右上角顯示「已選」 */
+        .book-card.selected + .book-detail-popup::after {
+            content: '✨ 已選';
+            position: absolute;
+            top: 10px; right: 10px;
+            background: #ff5e7e; color: white;
+            padding: 5px 12px; border-radius: 15px;
+            font-size: 0.95em; font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
         .popup-img { width: 120px; height: 160px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); border: 2px solid #fff; }
         .popup-title { margin: 0 0 8px 0; font-size: 1.4em; color: var(--secondary); font-weight: 900; line-height: 1.2; text-shadow: none; background: none; }
         .popup-recommender { background: linear-gradient(90deg, #a18cd1, #fbc2eb); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.9em; font-weight: bold; margin-bottom: 10px; box-shadow: 0 3px 8px rgba(0,0,0,0.1); }
         .popup-desc { font-size: 0.95em; color: #666; line-height: 1.5; font-weight: normal; max-height: 120px; overflow-y: auto; text-align: justify; padding: 0 5px; }
         
-        /* 懸浮框底部的「點擊投票」按鈕特效 */
+        /* 懸浮框底部的投票按鈕特效 */
         .popup-vote-btn {
             margin-top: 12px;
             background: linear-gradient(45deg, #ff7eb3, #ff758c);
@@ -279,7 +298,6 @@
 
     <!-- 1. 登入畫面 -->
     <div id="login-view" class="view active">
-        <!-- 將 Emoji 包在 .emoji 中，避免受漸層色遮蔽 -->
         <h1><span class="emoji">📖</span> <span class="gradient-text">我最喜愛隨身書投票</span> <span class="emoji">🌟</span></h1>
         <p style="font-size: 1.2em; font-weight: bold; color: #666;">進入夢幻繪本世界，請使用學校 Google 帳戶登入</p>
         <div id="google-btn-container"></div>
@@ -332,9 +350,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // ==========================================
-        // 加入推介人設定： recommender: "名字"
-        // ==========================================
         const booksConfig = {
             '一年級': [
                 { id: 'P1_1', img: 'P1_1.png', title: "不要碰我的小花", desc: "這是一本關於保護與分享的故事，畫風可愛，非常適合一年級小朋友閱讀。", recommender: "陳校長" },
@@ -501,7 +516,6 @@
                 const displayDesc = book.desc !== "" ? book.desc : "精彩簡介稍後補上...";
                 const displayRecommender = book.recommender !== "" ? book.recommender : "稍後公佈";
 
-                // 使用 Wrapper 包裹卡片與放大懸浮框，點擊這個 Wrapper 等同於投票！
                 const wrapper = document.createElement('div');
                 wrapper.className = 'book-wrapper';
                 
@@ -520,7 +534,7 @@
                         <div class="popup-desc">${displayDesc}</div>
                         
                         <!-- 點擊投票提示 -->
-                        <div class="popup-vote-btn">👆 點擊投票</div>
+                        <div class="popup-vote-btn">👆 點擊書本投票</div>
                     </div>
                 `;
 
