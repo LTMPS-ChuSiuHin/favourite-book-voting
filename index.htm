@@ -143,7 +143,6 @@
             border: 2px solid white;
         }
         
-        /* 年級方格基礎設定 */
         .grade-card {
             aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
             font-size: 1.8em; font-weight: 900; color: white; text-align: center; line-height: 1.3;
@@ -152,12 +151,12 @@
         .grade-card:hover { transform: translateY(-10px) scale(1.05); box-shadow: 0 20px 30px rgba(0,0,0,0.15); border-color: rgba(255,255,255,0.8); }
 
         /* 六種不同漸變色 (一至六年級) */
-        .grid-3 .grade-card:nth-child(1) { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); } /* 櫻花粉 */
-        .grid-3 .grade-card:nth-child(2) { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); } /* 蜜桃橘 */
-        .grid-3 .grade-card:nth-child(3) { background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); } /* 青檸黃 */
-        .grid-3 .grade-card:nth-child(4) { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); } /* 薄荷綠 */
-        .grid-3 .grade-card:nth-child(5) { background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); } /* 天空藍 */
-        .grid-3 .grade-card:nth-child(6) { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); } /* 香芋紫 */
+        .grid-3 .grade-card:nth-child(1) { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+        .grid-3 .grade-card:nth-child(2) { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
+        .grid-3 .grade-card:nth-child(3) { background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); }
+        .grid-3 .grade-card:nth-child(4) { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
+        .grid-3 .grade-card:nth-child(5) { background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); }
+        .grid-3 .grade-card:nth-child(6) { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
 
         @media (max-width: 500px) {
             .grade-card { font-size: 1.3em; } .grid-3 { gap: 10px; } .view { padding: 15px; }
@@ -170,12 +169,15 @@
             cursor: pointer;
         }
         .book-wrapper:hover { z-index: 100; } 
+        /* 觸控設備的啟用狀態 (z-index 提高避免被遮擋) */
+        .book-wrapper.touch-active { z-index: 100; }
 
         .book-card {
             width: 100%; aspect-ratio: 3/4; display: flex; flex-direction: column;
             align-items: center; justify-content: center; font-size: 1.1em; color: #888;
             border: 5px solid transparent; padding: 0; text-align: center; font-weight: bold;
             background-color: #fff;
+            transition: all 0.3s ease;
         }
         .book-card img {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;
@@ -189,12 +191,28 @@
             box-shadow: 2px 2px 8px rgba(0,0,0,0.2); text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
 
-        /* 書本卡片的已選狀態 */
-        .book-card.selected { border-color: #ff758c; transform: scale(0.95); box-shadow: 0 0 20px rgba(255,117,140,0.6); }
+        /* 🌟 超強化版：書本卡片的已選狀態 */
+        .book-card.selected { 
+            border: 6px solid #00f2fe; 
+            transform: scale(0.95); 
+            background-color: #f0faff; /* 淡淡的藍色背景 */
+            animation: selectedPulse 2s infinite alternate;
+        }
+        
+        /* 霓虹藍色外框呼吸燈特效 */
+        @keyframes selectedPulse {
+            0% { box-shadow: 0 0 15px rgba(0, 242, 254, 0.5), inset 0 0 15px rgba(0, 242, 254, 0.3); border-color: #00f2fe; }
+            100% { box-shadow: 0 0 30px rgba(0, 242, 254, 0.9), inset 0 0 25px rgba(0, 242, 254, 0.6); border-color: #4facfe; }
+        }
+
+        /* 已選狀態的右下角標籤 */
         .book-card.selected::after {
             content: '✨已選✨';
             position: absolute; bottom: 10px; right: 10px; font-size: 0.9em; z-index: 5;
-            background: #ff758c; color: white; border-radius: 15px; padding: 5px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #4facfe, #00f2fe); color: white; 
+            border-radius: 15px; padding: 5px 10px; 
+            box-shadow: 0 4px 10px rgba(0, 242, 254, 0.5); border: 2px solid white;
+            font-weight: 900;
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
@@ -213,32 +231,40 @@
             opacity: 0;
             visibility: hidden;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            pointer-events: none;
+            pointer-events: none; /* 避免干擾滑鼠點擊 */
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* 懸浮時顯示放大框 */
-        .book-wrapper:hover .book-detail-popup {
+        /* 滑鼠 (Mouse) 懸浮時顯示放大框 */
+        @media (hover: hover) {
+            .book-wrapper:hover .book-detail-popup {
+                opacity: 1; visibility: visible;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+        
+        /* 觸控設備 (Touch) 點選後顯示放大框 */
+        .book-wrapper.touch-active .book-detail-popup {
             opacity: 1; visibility: visible;
             transform: translate(-50%, -50%) scale(1);
         }
 
-        /* 書本被選取時，連帶改變「懸浮框」的樣式 */
+        /* 🌟 超強化版：當書本被選取時，連帶改變「懸浮框」的樣式 */
         .book-card.selected + .book-detail-popup {
-            border: 4px solid #ff5e7e;
-            background: rgba(255, 240, 245, 0.96); /* 顯示粉嫩的已選背景 */
-            box-shadow: 0 20px 40px rgba(0,0,0,0.25), 0 0 45px rgba(255, 94, 126, 0.8);
+            border: 4px solid #00f2fe;
+            background: rgba(240, 250, 255, 0.97); /* 帶有科技感淡藍的背景 */
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25), 0 0 45px rgba(0, 242, 254, 0.6);
         }
         
         /* 懸浮框右上角顯示「已選」 */
         .book-card.selected + .book-detail-popup::after {
             content: '✨ 已選';
             position: absolute;
-            top: 10px; right: 10px;
-            background: #ff5e7e; color: white;
-            padding: 5px 12px; border-radius: 15px;
-            font-size: 0.95em; font-weight: bold;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            top: -12px; right: -10px; /* 凸出懸浮框外緣 */
+            background: linear-gradient(45deg, #4facfe, #00f2fe); color: white;
+            padding: 6px 15px; border-radius: 20px;
+            font-size: 1em; font-weight: 900;
+            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.6); border: 2px solid white;
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
@@ -254,14 +280,22 @@
             color: white; font-weight: bold; font-size: 1.1em;
             padding: 8px 25px; border-radius: 25px;
             box-shadow: 0 4px 10px rgba(255,117,140,0.4);
-            animation: pulseBtn 1.5s infinite;
+            animation: pulseBtnPink 1.5s infinite;
             transition: all 0.3s ease;
         }
 
-        @keyframes pulseBtn {
+        /* 未投票狀態：粉紅按鈕脈衝 */
+        @keyframes pulseBtnPink {
             0% { transform: scale(1); box-shadow: 0 4px 10px rgba(255,117,140,0.4); }
             50% { transform: scale(1.05); box-shadow: 0 6px 15px rgba(255,117,140,0.6); }
             100% { transform: scale(1); box-shadow: 0 4px 10px rgba(255,117,140,0.4); }
+        }
+
+        /* 已投票狀態：亮藍按鈕脈衝 (由 JS 加入 style 覆蓋) */
+        @keyframes pulseBtnBlue {
+            0% { transform: scale(1); box-shadow: 0 4px 10px rgba(0, 242, 254, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 6px 15px rgba(0, 242, 254, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 4px 10px rgba(0, 242, 254, 0.4); }
         }
 
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -359,8 +393,20 @@
         import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // ==========================================
-        // 加入推介人設定： recommender: "名字"
+        // 🌟 觸控設備精準偵測系統
+        // 解決同時有滑鼠與觸控螢幕的 iPad / 筆電誤判問題
         // ==========================================
+        let isUsingTouch = false;
+        window.addEventListener('touchstart', () => { isUsingTouch = true; }, {passive: true});
+        window.addEventListener('mousemove', () => { isUsingTouch = false; }, {passive: true});
+
+        // 點擊書本以外的空白地方，隱藏所有懸浮框 (適用於 iPad/手機)
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.book-wrapper')) {
+                document.querySelectorAll('.book-wrapper').forEach(w => w.classList.remove('touch-active'));
+            }
+        });
+
         const booksConfig = {
             '一年級': [
                 { id: 'P1_1', img: 'P1_1.png', title: "不要碰我的小花", desc: "這是一本關於保護與分享的故事，畫風可愛，非常適合一年級小朋友閱讀。", recommender: "陳校長" },
@@ -549,23 +595,20 @@
                     </div>
                 `;
 
-                // 👉 修正 iPad 首擊誤判：紀錄滑鼠進入的時間
-                wrapper.addEventListener('mouseenter', () => {
-                    wrapper.dataset.hoverTime = Date.now();
-                });
-
-                // 處理點擊選取邏輯
+                // 🌟 更新的投票與觸控判定邏輯
                 wrapper.onclick = (e) => {
-                    const hoverTime = parseInt(wrapper.dataset.hoverTime || '0');
-                    const timeSinceHover = Date.now() - hoverTime;
-
-                    // 若設備支援觸控 (iPad/手機)，且在懸浮後極短時間內(<250ms)觸發了點擊，代表這是第一次觸控。
-                    // 我們在此攔截它，只顯示懸浮框而不進行投票。這讓 iPad 能完美擁有與手機相同的「雙擊」體驗！
-                    if (navigator.maxTouchPoints > 0 && timeSinceHover < 250) {
-                        return;
+                    // 若判定為觸控設備操作，攔截第一次點擊以顯示懸浮框
+                    if (isUsingTouch) {
+                        if (!wrapper.classList.contains('touch-active')) {
+                            // 隱藏其他打開的懸浮框
+                            document.querySelectorAll('.book-wrapper').forEach(w => w.classList.remove('touch-active'));
+                            // 顯示當前這本書的懸浮框
+                            wrapper.classList.add('touch-active');
+                            return; // 🛑 停止往下執行，不進行投票
+                        }
                     }
 
-                    // 正常投票邏輯
+                    // ⬇️ 第二次點選 (或是電腦滑鼠點選) 進入正常投票邏輯
                     const cardEl = document.getElementById(`card-${book.id}`);
                     const popupVoteBtn = wrapper.querySelector('.popup-vote-btn');
                     
@@ -573,16 +616,20 @@
                         // 取消選取
                         selectedBooks = selectedBooks.filter(id => id !== book.id);
                         cardEl.classList.remove('selected');
-                        // 復原懸浮框內的按鈕外觀
+                        
+                        // 復原懸浮框內的按鈕樣式
                         popupVoteBtn.innerHTML = '👆 點擊書本投票';
                         popupVoteBtn.style.background = 'linear-gradient(45deg, #ff7eb3, #ff758c)';
+                        popupVoteBtn.style.animation = 'pulseBtnPink 1.5s infinite';
                     } else {
                         // 確認選取
                         selectedBooks.push(book.id);
                         cardEl.classList.add('selected');
-                        // 改變懸浮框內的按鈕外觀
+                        
+                        // 將懸浮框內的按鈕改為「已選取/取消」樣式
                         popupVoteBtn.innerHTML = '✔️ 點擊取消選擇';
                         popupVoteBtn.style.background = 'linear-gradient(45deg, #4facfe, #00f2fe)';
+                        popupVoteBtn.style.animation = 'pulseBtnBlue 1.5s infinite';
                     }
                 };
                 bookGrid.appendChild(wrapper);
