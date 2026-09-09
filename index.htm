@@ -143,14 +143,21 @@
             border: 2px solid white;
         }
         
+        /* 年級方格基礎設定 */
         .grade-card {
             aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
             font-size: 1.8em; font-weight: 900; color: white; text-align: center; line-height: 1.3;
-            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
         }
-        .grade-card:nth-child(2n) { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
-        .grade-card:nth-child(3n) { background: linear-gradient(135deg, #fccb90 0%, #d57eeb 100%); }
         .grade-card:hover { transform: translateY(-10px) scale(1.05); box-shadow: 0 20px 30px rgba(0,0,0,0.15); border-color: rgba(255,255,255,0.8); }
+
+        /* 👑 6種不同漸變色 (一至六年級) */
+        .grid-3 .grade-card:nth-child(1) { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); } /* 櫻花粉 */
+        .grid-3 .grade-card:nth-child(2) { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); } /* 蜜桃橘 */
+        .grid-3 .grade-card:nth-child(3) { background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); } /* 青檸黃 */
+        .grid-3 .grade-card:nth-child(4) { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); } /* 薄荷綠 */
+        .grid-3 .grade-card:nth-child(5) { background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); } /* 天空藍 */
+        .grid-3 .grade-card:nth-child(6) { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); } /* 香芋紫 */
 
         @media (max-width: 500px) {
             .grade-card { font-size: 1.3em; } .grid-3 { gap: 10px; } .view { padding: 15px; }
@@ -182,7 +189,7 @@
             box-shadow: 2px 2px 8px rgba(0,0,0,0.2); text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
 
-        /* 卡片的已選狀態 (移動至右下角並改文字) */
+        /* 卡片的已選狀態 */
         .book-card.selected { border-color: #ff758c; transform: scale(0.95); box-shadow: 0 0 20px rgba(255,117,140,0.6); }
         .book-card.selected::after {
             content: '✨已選✨';
@@ -216,14 +223,14 @@
             transform: translate(-50%, -50%) scale(1);
         }
 
-        /* ⚠️ 新增：當書本被選取時，連帶改變懸浮框的樣式 */
+        /* 當書本被選取時，連帶改變懸浮框的樣式 */
         .book-card.selected + .book-detail-popup {
             border: 4px solid #ff5e7e;
-            background: rgba(255, 240, 245, 0.96); /* 稍微帶點粉紅色的背景 */
+            background: rgba(255, 240, 245, 0.96); 
             box-shadow: 0 20px 40px rgba(0,0,0,0.25), 0 0 45px rgba(255, 94, 126, 0.8);
         }
         
-        /* ⚠️ 新增：當書本被選取時，懸浮框右上角顯示「已選」 */
+        /* 當書本被選取時，懸浮框右上角顯示「已選」 */
         .book-card.selected + .book-detail-popup::after {
             content: '✨ 已選';
             position: absolute;
@@ -350,6 +357,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
+        // ==========================================
+        // 加入推介人設定： recommender: "名字"
+        // ==========================================
         const booksConfig = {
             '一年級': [
                 { id: 'P1_1', img: 'P1_1.png', title: "不要碰我的小花", desc: "這是一本關於保護與分享的故事，畫風可愛，非常適合一年級小朋友閱讀。", recommender: "陳校長" },
