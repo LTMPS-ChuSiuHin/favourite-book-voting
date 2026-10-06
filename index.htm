@@ -100,7 +100,7 @@
             border: 2px solid var(--glass-border); border-radius: 30px;
             padding: 30px; max-width: 1000px; margin: 0 auto;
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            position: relative; /* 為了讓管理員按鈕絕對定位 */
+            position: relative; 
         }
         .view.active { display: block; }
         
@@ -109,16 +109,17 @@
             to { opacity: 1; transform: translateY(0) scale(1); } 
         }
 
-        /* ⚠️ 管理員登入按鈕 */
+        /* ⚠️ 修復：管理員登入按鈕 z-index 提高確保可點擊 */
         .admin-login-btn {
             position: absolute;
-            top: 15px; left: 15px;
-            background: rgba(255,255,255,0.6); border: 1px solid rgba(0,0,0,0.1);
-            color: #666; padding: 5px 12px; border-radius: 15px;
+            top: 20px; left: 20px;
+            background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.1);
+            color: #666; padding: 8px 15px; border-radius: 20px;
             font-size: 0.9em; font-weight: bold; cursor: pointer;
             transition: all 0.3s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            z-index: 10; /* 確保在最上層 */
         }
-        .admin-login-btn:hover { background: rgba(255,255,255,0.9); transform: scale(1.05); }
+        .admin-login-btn:hover { background: rgba(255,255,255,1); transform: scale(1.05); }
 
         .btn {
             background: linear-gradient(45deg, var(--primary), var(--secondary));
@@ -173,6 +174,7 @@
 
         @media (max-width: 500px) {
             .grade-card { font-size: 1.3em; } .grid-3 { gap: 10px; } .view { padding: 15px; }
+            .admin-login-btn { top: 10px; left: 10px; padding: 5px 10px; font-size: 0.8em; }
         }
 
         /* 書本外層容器 */
@@ -322,7 +324,12 @@
         }
         
         #user-info { margin-bottom: 20px; font-weight: bold; color: #666; background: rgba(255,255,255,0.6); display: inline-block; padding: 5px 20px; border-radius: 20px;}
-        #google-btn-container { display: flex; justify-content: center; margin-top: 20px; }
+        
+        /* ⚠️ 修復：限制登入按鈕容器的高度與邊界，確保不被覆蓋 */
+        #google-btn-container { 
+            display: flex; justify-content: center; margin-top: 30px; 
+            position: relative; z-index: 5; 
+        }
     </style>
 </head>
 <body>
@@ -341,9 +348,10 @@
 
     <!-- 1. 登入畫面 -->
     <div id="login-view" class="view active">
-        <!-- ⚠️ 管理員登入按鈕 -->
+        <!-- 管理員登入按鈕 -->
         <button class="admin-login-btn" onclick="adminLogin()">⚙️ 管理員登入</button>
-
+        
+        <br><br>
         <h1><span class="emoji">📖</span> <span class="gradient-text">我最喜愛隨身書投票</span> <span class="emoji">🌟</span></h1>
         <p style="font-size: 1.2em; font-weight: bold; color: #666;">進入夢幻繪本世界，請使用學校 Google 帳戶登入</p>
         <div id="google-btn-container"></div>
@@ -503,7 +511,7 @@
         const GOOGLE_CLIENT_ID = "573911894747-0c28hfr0bmkjnn8pkm2msg6sjal1thqe.apps.googleusercontent.com";
 
         let currentUser = null;
-        let isAdminMode = false; // ⚠️ 管理員模式標記
+        let isAdminMode = false;
         let currentGrade = '';
         let selectedBooks = [];
         const grades = ['一年級', '二年級', '三年級', '四年級', '五年級', '六年級'];
@@ -513,7 +521,6 @@
             const pwd = prompt("請輸入管理員密碼：");
             if (pwd === "123567") {
                 isAdminMode = true;
-                // 自動生成一個唯一的虛擬 UID，以確保每次投票都是獨立的
                 refreshAdminUser();
                 initMainMenu();
                 switchView('main-menu-view');
@@ -522,7 +529,6 @@
             }
         };
 
-        // ⚠️ 刷新管理員 UID (每次提交後呼叫，保證無限代投)
         function refreshAdminUser() {
             currentUser = {
                 uid: "admin_" + Date.now() + "_" + Math.floor(Math.random() * 1000),
@@ -673,12 +679,11 @@
                     studentName: currentUser.name,
                     [currentGrade]: selectedBooks,
                     lastUpdated: new Date(),
-                    isAdminVote: isAdminMode // 記錄這是否為管理員代投
+                    isAdminVote: isAdminMode 
                 });
                 
                 alert(`太棒了！你已成功提交 ${currentGrade} 的投票！🎉`);
                 
-                // ⚠️ 如果是管理員模式，提交後立刻刷新 UID 以備下一位同學使用
                 if (isAdminMode) {
                     refreshAdminUser();
                 }
@@ -704,4 +709,115 @@
         };
 
         const getBookInfo = (bookId, grade) => {
-            const foundBook = booksConfig[grade].find(
+            const foundBook = booksConfig[grade].find(b => b.id === bookId);
+            if (foundBook) {
+                const num = bookId.split('_')[1];
+                const title = foundBook.title !== "" ? foundBook.title : `書本 ${num}`;
+                const recommender = foundBook.recommender !== "" ? foundBook.recommender : "稍後公佈";
+                return { title: title, img: foundBook.img, recommender: recommender };
+            }
+            return { title: bookId, img: '', recommender: '未知' };
+        };
+
+        window.openLeaderboardDetail = async (category) => {
+            switchView('leaderboard-detail-view');
+            document.getElementById('leaderboard-detail-title').innerHTML = `<span class="emoji">🏆</span> <span class="gradient-text">${category === 'top' ? '各級首名' : category + '榜單'}</span> <span class="emoji">🏆</span>`;
+            const listDiv = document.getElementById('leaderboard-list');
+            listDiv.innerHTML = '<p style="font-size: 1.5em;">載入中，請稍候...⏳</p>';
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "votes"));
+                
+                let votersCount = {}; 
+                let votesCount = {};  
+                
+                grades.forEach(g => {
+                    votersCount[g] = 0;
+                    votesCount[g] = {};
+                    booksConfig[g].forEach(b => {
+                        votesCount[g][b.id] = 0; 
+                    });
+                });
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    grades.forEach(g => {
+                        if (data[g] && Array.isArray(data[g])) {
+                            votersCount[g]++;
+                            data[g].forEach(bookId => {
+                                if(votesCount[g][bookId] !== undefined) {
+                                    votesCount[g][bookId]++;
+                                }
+                            });
+                        }
+                    });
+                });
+
+                let html = '';
+
+                if (category === 'top') {
+                    grades.forEach(grade => {
+                        const sortedBooks = Object.entries(votesCount[grade]).sort((a, b) => b[1] - a[1]);
+                        if (sortedBooks.length > 0 && sortedBooks[0][1] > 0) { 
+                            const topBookId = sortedBooks[0][0];
+                            const topBookCount = sortedBooks[0][1];
+                            const bookInfo = getBookInfo(topBookId, grade);
+                            
+                            html += `
+                                <div class="leaderboard-item">
+                                    <div style="display: flex; align-items: center;">
+                                        <span style="font-size: 1.8em; margin-right: 15px; text-shadow: 0 2px 5px rgba(0,0,0,0.2);">🏆</span>
+                                        <img src="${bookInfo.img}" class="leaderboard-img" onerror="this.style.display='none'">
+                                        <div style="display: flex; flex-direction: column;">
+                                            <span style="font-size: 0.8em; color: #888; font-weight: normal;">${grade}</span>
+                                            <span style="font-size: 1.1em;">${bookInfo.title}</span>
+                                            <span style="font-size: 0.85em; color: var(--primary); margin-top: 3px;">👤 推介人：${bookInfo.recommender}</span>
+                                        </div>
+                                    </div>
+                                    <span class="votes">${topBookCount} 票</span>
+                                </div>
+                            `;
+                        }
+                    });
+                    if (html === '') html = '<p style="font-size: 1.2em;">目前還沒有人投票喔！</p>';
+                } 
+                else {
+                    const grade = category;
+                    html += `<div style="background: rgba(255,255,255,0.7); border-radius: 15px; padding: 10px; display: inline-block; margin-bottom: 25px; border: 1px solid #fff; box-shadow: 0 5px 10px rgba(0,0,0,0.05);"><p style="font-size: 1.1em; color: #555; margin: 0;">👤 本級投票總人數：<span style="font-weight: 900; color: var(--primary); font-size: 1.3em;">${votersCount[grade]}</span> 人</p></div>`;
+                    
+                    const sortedBooks = Object.entries(votesCount[grade]).sort((a, b) => b[1] - a[1]);
+                    
+                    sortedBooks.forEach(([bookId, count], index) => {
+                        const bookInfo = getBookInfo(bookId, grade);
+                        
+                        let rankIcon = `<span style="width: 40px; display: inline-block; text-align: center; color: #999;">${index + 1}.</span>`;
+                        if (index === 0 && count > 0) rankIcon = `<span style="font-size: 1.8em; width: 40px; display: inline-block; text-align: center;">🥇</span>`;
+                        else if (index === 1 && count > 0) rankIcon = `<span style="font-size: 1.8em; width: 40px; display: inline-block; text-align: center;">🥈</span>`;
+                        else if (index === 2 && count > 0) rankIcon = `<span style="font-size: 1.8em; width: 40px; display: inline-block; text-align: center;">🥉</span>`;
+
+                        html += `
+                            <div class="leaderboard-item">
+                                <div style="display: flex; align-items: center;">
+                                    ${rankIcon}
+                                    <img src="${bookInfo.img}" class="leaderboard-img" onerror="this.style.display='none'">
+                                    <div style="display: flex; flex-direction: column; justify-content: center;">
+                                        <span style="font-size: 1.1em;">${bookInfo.title}</span>
+                                        <span style="font-size: 0.85em; color: var(--primary); margin-top: 3px;">👤 推介人：${bookInfo.recommender}</span>
+                                    </div>
+                                </div>
+                                <span class="votes">${count} 票</span>
+                            </div>
+                        `;
+                    });
+                }
+
+                listDiv.innerHTML = html;
+
+            } catch (error) {
+                listDiv.innerHTML = '<p>讀取排行榜失敗，請檢查 Firebase 權限設定。</p>';
+                console.error(error);
+            }
+        };
+    </script>
+</body>
+</html>
